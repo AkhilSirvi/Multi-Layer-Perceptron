@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <title>NEURAL NETWORK SYSTEM</title>
+    <script src="../scripts/data.js"></script>
+  </head>
+  <body>
+    <h1>NEURAL NETWORK SYSTEM</h1>
+    <h3>Created By Akhil Sirvi And Paarth Ojha</h3>
+    <h3>
+      You can enter a single digit number by drawing and the Neural Network
+      program will give the output based on the Accuracy. You Can Also Train If You Want To Have To Click The
+      Train Button To Train The Network It Will Take Few Minutes To Train By
+      Mnist Dataset
+    </h3>
+    <div id="main_container">
+
+      <div id="first">
+        <h3>Output:</h3>
+        <div id="output_text"></div>
+      </div>
+
+      <div id="second"></div>
+
+      <button onclick="neural_network_main()" id="enterdatabutton">
+        Enter you written data
+      </button>
+
+      <button onclick="train_button()" id="traindatabutton">
+        Train the neural network
+      </button>
+    </div>
+<br>
+      <div id="secondmaincontainer">
+
+        
+        Alpha (Learning Rate): <input type="text"  id="alpha_value" value="0.1"> 
+        Training Length: <input type="text"  id="train_length_input" value="20">
+        Lambda (Regularization Value): <input type="text"  id="lambda_value" value="0.000001">
+      
+      <input type="submit" id="alpha_submit">
+      
+      <div id="cost_value_output"></div>
+    </div>
+
+
+
+    <div id="loadbar">
+      <div id="loadbartitle">Training Process</div>
+      <div id="loadbarmain"></div>
+    </div>
+
+
+    <canvas id="graphcanvas" style="display: fixed;"></canvas>
+    <!-- include chat js for graphing -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../scripts/graph.js" defer></script>
+    <script src="../scripts/maths.js" defer></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Include the second JavaScript file dynamically
+        let script = document.createElement("script");
+        script.src = "../scripts/script.js";
+        document.body.appendChild(script);
+      });
+    </script>
+
+  </body>
+</html>

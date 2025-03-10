@@ -1,0 +1,135 @@
+@import url("https://fonts.googleapis.com/css2?family=Open+Sans&display=swap");
+* {
+  margin: 0px;
+  padding: 0px;
+}
+body {
+  font-family: "Open Sans", sans-serif;
+  width: 100%;
+  height: 100vh;
+  background: rgb(227 227 227);
+  color: black;
+}
+button{
+  font-family: "Open Sans", sans-serif;
+}
+h1 {
+  padding: 20px;
+  width: 100%;
+  text-align: center;
+  box-sizing: border-box;
+}
+h3 {
+  padding: 10px;
+}
+#main_container {
+  width: 100%;
+  
+  display: flex;
+
+  justify-content: space-around;
+}
+@media only screen and (max-width: 834px){
+  #main_container{
+    flex-direction: column;
+    align-content: space-around;
+    flex-wrap: wrap;
+  }
+}
+#first {
+  width: 262.538px;
+  height: 384.8px;
+  background-color: #8aa6e6;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 10%;
+}
+#second {
+  height: min-content;
+  width: min-content;
+  display: grid;
+  border: 5px solid black;
+  border-radius: 8px;
+  box-shadow: 0px 0px 30px white;
+  grid-template-columns: repeat(20, auto);
+}
+#output_text {
+  padding: 20px;
+  font-size: 20px;
+}
+#enterdatabutton, #traindatabutton {
+  height: min-content;
+  padding: 18px;
+  outline: none;
+  border: 3px solid black;
+  border-radius: 8px;
+  background: #8aa6e6;
+  margin: 10px;
+  font-size: 20px;
+}
+
+.box {
+  width: 20px;
+  height: 20px;
+  outline: 1px solid black;
+  background-color: rgb(255, 255, 255);
+}
+.box:hover {
+  background-color: blue;
+}
+#loadbar {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 400px;
+  height: 100px;
+  background: white;
+  border: 3px solid black;
+  border-radius: 8px;
+  display: none;
+  flex-direction: column;
+}
+
+#loadbartitle {
+  width: 100%;
+  text-align: center;
+  height: 30px;
+  font-size: 20px;
+}
+#loadbarmain {
+  width: 90%;
+  height: 100%;
+  margin: 20px;
+  box-sizing: border-box;
+  background: black;
+}
+
+#secondmaincontainer{
+  width: 100%;
+  height: min-content;
+  display: flex;
+  justify-content: center;
+  align-content: center;
+  flex-wrap: wrap;
+  font-size: 20px;
+}
+
+#secondmaincontainer input, button{
+  margin: 2px 10px;
+  padding: 10px;
+  font-size: 15px;
+}
+
+@media only screen and (max-width: 399px){
+  .box{
+    width: 14px;
+    height: 14px;
+  }
+  #second{
+    margin: 0px 0px 0px 23px;
+  }
+}
