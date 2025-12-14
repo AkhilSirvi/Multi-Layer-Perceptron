@@ -1,45 +1,93 @@
+/**
+ * Neural Network System - Stylesheet
+ * 
+ * This stylesheet provides styling for the Multi-Layer Perceptron
+ * digit recognition interface including:
+ * - Page layout and typography
+ * - Drawing grid (20x20 pixel canvas)
+ * - Output display panel
+ * - Control buttons and input fields
+ * - Training progress bar
+ * - Responsive design for mobile devices
+ * 
+ * @author Akhil Sirvi
+ */
+
+/* =============================================================================
+   GOOGLE FONTS IMPORT
+   Using Open Sans for clean, readable interface text
+   ============================================================================= */
 @import url("https://fonts.googleapis.com/css2?family=Open+Sans&display=swap");
+
+/* =============================================================================
+   GLOBAL RESET & BASE STYLES
+   ============================================================================= */
+
+/* Remove default margins and padding from all elements */
 * {
   margin: 0px;
   padding: 0px;
 }
+
+/* Base body styles */
 body {
   font-family: "Open Sans", sans-serif;
   width: 100%;
   height: 100vh;
-  background: rgb(227 227 227);
+  background: rgb(227 227 227);  /* Light gray background */
   color: black;
 }
-button{
+
+/* Ensure buttons inherit font family */
+button {
   font-family: "Open Sans", sans-serif;
 }
+
+/* =============================================================================
+   HEADER STYLES
+   ============================================================================= */
+
+/* Main title styling */
 h1 {
   padding: 20px;
   width: 100%;
   text-align: center;
   box-sizing: border-box;
 }
+
+/* Subtitle and description styling */
 h3 {
   padding: 10px;
 }
+
+/* =============================================================================
+   MAIN CONTAINER LAYOUT
+   Contains: output panel, drawing grid, and action buttons
+   Uses flexbox for horizontal arrangement on desktop
+   ============================================================================= */
 #main_container {
   width: 100%;
-  
   display: flex;
-
   justify-content: space-around;
 }
-@media only screen and (max-width: 834px){
-  #main_container{
+
+/* Responsive: Stack items vertically on tablets and smaller screens */
+@media only screen and (max-width: 834px) {
+  #main_container {
     flex-direction: column;
     align-content: space-around;
     flex-wrap: wrap;
   }
 }
+
+/* =============================================================================
+   OUTPUT PANEL STYLES
+   Displays the neural network's predictions and confidence percentages
+   ============================================================================= */
 #first {
   width: 262.538px;
   height: 384.8px;
-  background-color: #8aa6e6;
+  background-color: #8aa6e6;  /* Soft blue background */
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -47,89 +95,125 @@ h3 {
   justify-content: center;
   margin: 0 10%;
 }
+
+/* Text container within output panel */
+#output_text {
+  padding: 20px;
+  font-size: 20px;
+}
+
+/* =============================================================================
+   DRAWING GRID STYLES
+   20x20 pixel grid for user digit input (400 pixels total)
+   ============================================================================= */
 #second {
   height: min-content;
   width: min-content;
   display: grid;
   border: 5px solid black;
   border-radius: 8px;
-  box-shadow: 0px 0px 30px white;
-  grid-template-columns: repeat(20, auto);
+  box-shadow: 0px 0px 30px white;  /* Subtle glow effect */
+  grid-template-columns: repeat(20, auto);  /* 20 columns */
 }
-#output_text {
-  padding: 20px;
-  font-size: 20px;
+
+/* Individual pixel in the drawing grid */
+.box {
+  width: 20px;
+  height: 20px;
+  outline: 1px solid black;
+  background-color: rgb(255, 255, 255);  /* White (empty) by default */
 }
+
+/* Hover effect shows blue preview when mouse is over a pixel */
+.box:hover {
+  background-color: blue;
+}
+
+/* =============================================================================
+   ACTION BUTTON STYLES
+   "Enter your written data" and "Train the neural network" buttons
+   ============================================================================= */
 #enterdatabutton, #traindatabutton {
   height: min-content;
   padding: 18px;
   outline: none;
   border: 3px solid black;
   border-radius: 8px;
-  background: #8aa6e6;
+  background: #8aa6e6;  /* Match output panel blue */
   margin: 10px;
   font-size: 20px;
 }
 
-.box {
-  width: 20px;
-  height: 20px;
-  outline: 1px solid black;
-  background-color: rgb(255, 255, 255);
-}
-.box:hover {
-  background-color: blue;
-}
+/* =============================================================================
+   LOADING/PROGRESS BAR STYLES
+   Shows training progress during backpropagation
+   Centered modal overlay with progress indicator
+   ============================================================================= */
 #loadbar {
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);  /* Center the modal */
   width: 400px;
   height: 100px;
   background: white;
   border: 3px solid black;
   border-radius: 8px;
-  display: none;
+  display: none;  /* Hidden by default, shown during training */
   flex-direction: column;
 }
 
+/* Progress bar title */
 #loadbartitle {
   width: 100%;
   text-align: center;
   height: 30px;
   font-size: 20px;
 }
+
+/* Progress bar fill element - width is dynamically updated during training */
 #loadbarmain {
   width: 90%;
   height: 100%;
   margin: 20px;
   box-sizing: border-box;
-  background: black;
+  background: black;  /* Progress fill color */
 }
 
-#secondmaincontainer{
+/* =============================================================================
+   HYPERPARAMETER CONTROLS CONTAINER
+   Contains learning rate, training length, and lambda inputs
+   ============================================================================= */
+#secondmaincontainer {
   width: 100%;
   height: min-content;
   display: flex;
   justify-content: center;
   align-content: center;
-  flex-wrap: wrap;
+  flex-wrap: wrap;  /* Wrap to new line on smaller screens */
   font-size: 20px;
 }
 
-#secondmaincontainer input, button{
+/* Input fields and buttons within hyperparameter section */
+#secondmaincontainer input, button {
   margin: 2px 10px;
   padding: 10px;
   font-size: 15px;
 }
 
-@media only screen and (max-width: 399px){
-  .box{
+/* =============================================================================
+   RESPONSIVE DESIGN - SMALL MOBILE DEVICES
+   Adjusts drawing grid size for very small screens
+   ============================================================================= */
+@media only screen and (max-width: 399px) {
+  /* Smaller pixels on very small screens */
+  .box {
     width: 14px;
     height: 14px;
   }
-  #second{
+  
+  /* Adjust grid positioning */
+  #second {
     margin: 0px 0px 0px 23px;
   }
 }

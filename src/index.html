@@ -6,9 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="style.css" />
     <title>NEURAL NETWORK SYSTEM</title>
+    
+    <!-- 
+      Load data.js first - contains pre-trained weights, biases, 
+      and training data that other scripts depend on 
+    -->
     <script src="../scripts/data.js"></script>
   </head>
   <body>
+    <!-- ============================================================
+         HEADER SECTION
+         ============================================================ -->
     <h1>NEURAL NETWORK SYSTEM</h1>
     <h3>Created By Akhil Sirvi</h3>
     <h3>
@@ -17,53 +25,94 @@
       Train Button To Train The Network It Will Take Few Minutes To Train By
       Mnist Dataset
     </h3>
+    
+    <!-- ============================================================
+         MAIN CONTAINER: Drawing Grid, Output Display, and Controls
+         ============================================================ -->
     <div id="main_container">
 
+      <!-- Output Panel: Displays prediction results with confidence percentages -->
       <div id="first">
         <h3>Output:</h3>
         <div id="output_text"></div>
       </div>
 
+      <!-- Drawing Grid: 20x20 pixel canvas where users draw digits -->
+      <!-- Pixels are dynamically created by script.js (400 total) -->
       <div id="second"></div>
 
+      <!-- Recognition Button: Triggers forward propagation on user's drawing -->
       <button onclick="neural_network_main()" id="enterdatabutton">
         Enter you written data
       </button>
 
+      <!-- Training Button: Initiates backpropagation training loop -->
       <button onclick="train_button()" id="traindatabutton">
         Train the neural network
       </button>
     </div>
-<br>
-      <div id="secondmaincontainer">
 
+    <br>
+    
+    <!-- ============================================================
+         HYPERPARAMETER CONTROLS
+         Allows users to adjust training settings without code changes
+         ============================================================ -->
+    <div id="secondmaincontainer">
         
-        Alpha (Learning Rate): <input type="text"  id="alpha_value" value="0.1"> 
-        Training Length: <input type="text"  id="train_length_input" value="20">
-        Lambda (Regularization Value): <input type="text"  id="lambda_value" value="0.000001">
+        <!-- Learning Rate (Alpha): Controls gradient descent step size
+             Typical range: 0.001 - 1.0 (default: 0.1) -->
+        Alpha (Learning Rate): <input type="text" id="alpha_value" value="0.1"> 
+        
+        <!-- Training Iterations: Number of epochs/iterations to run
+             More iterations = longer training but potentially better accuracy -->
+        Training Length: <input type="text" id="train_length_input" value="20">
+        
+        <!-- Regularization (Lambda): L2 regularization coefficient
+             Prevents overfitting by penalizing large weights
+             Typical range: 0.000001 - 0.01 -->
+        Lambda (Regularization Value): <input type="text" id="lambda_value" value="0.000001">
       
-      <input type="submit" id="alpha_submit">
+        <!-- Submit Button: Applies the hyperparameter changes -->
+        <input type="submit" id="alpha_submit">
       
-      <div id="cost_value_output"></div>
+        <!-- Cost/Accuracy Display: Shows current training metrics -->
+        <div id="cost_value_output"></div>
     </div>
 
-
-
+    <!-- ============================================================
+         LOADING BAR: Shows training progress
+         Hidden by default, displayed during training
+         ============================================================ -->
     <div id="loadbar">
       <div id="loadbartitle">Training Process</div>
       <div id="loadbarmain"></div>
     </div>
 
-
+    <!-- ============================================================
+         TRAINING METRICS CHART
+         Displays cost and accuracy trends during training
+         Uses Chart.js library for visualization
+         ============================================================ -->
     <canvas id="graphcanvas" style="display: fixed;"></canvas>
-    <!-- include chat js for graphing -->
+    
+    <!-- Chart.js Library: External library for data visualization -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Graph Module: Handles chart generation and updates -->
     <script src="../scripts/graph.js" defer></script>
+    
+    <!-- Math Module: Mathematical operations for neural network -->
     <script src="../scripts/maths.js" defer></script>
 
+    <!-- 
+      Main Script Loading:
+      Loaded dynamically after DOM is ready to ensure all elements exist
+      Contains: pixel grid creation, event handlers, training loop, prediction
+    -->
     <script>
       document.addEventListener("DOMContentLoaded", function () {
-        // Include the second JavaScript file dynamically
+        // Dynamically load the main neural network script
         let script = document.createElement("script");
         script.src = "../scripts/script.js";
         document.body.appendChild(script);
