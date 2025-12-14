@@ -5,111 +5,194 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="style.css" />
-    <title>NEURAL NETWORK SYSTEM</title>
+    <title>Neural Network - Digit Recognition</title>
     
-    <!-- 
-      Load data.js first - contains pre-trained weights, biases, 
-      and training data that other scripts depend on 
-    -->
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Load data.js first - contains pre-trained weights and training data -->
     <script src="../scripts/data.js"></script>
   </head>
   <body>
     <!-- ============================================================
          HEADER SECTION
          ============================================================ -->
-    <h1>NEURAL NETWORK SYSTEM</h1>
-    <h3>Created By Akhil Sirvi</h3>
-    <h3>
-      You can enter a single digit number by drawing and the Neural Network
-      program will give the output based on the Accuracy. You Can Also Train If You Want To Have To Click The
-      Train Button To Train The Network It Will Take Few Minutes To Train By
-      Mnist Dataset
-    </h3>
-    
-    <!-- ============================================================
-         MAIN CONTAINER: Drawing Grid, Output Display, and Controls
-         ============================================================ -->
-    <div id="main_container">
-
-      <!-- Output Panel: Displays prediction results with confidence percentages -->
-      <div id="first">
-        <h3>Output:</h3>
-        <div id="output_text"></div>
+    <header class="header">
+      <div class="header-content">
+        <div class="logo">
+          <i class="fas fa-brain"></i>
+          <span>Neural Network</span>
+        </div>
+        <h1 class="title">Handwritten Digit Recognition</h1>
+        <p class="subtitle">Draw a digit and let the AI predict it</p>
       </div>
-
-      <!-- Drawing Grid: 20x20 pixel canvas where users draw digits -->
-      <!-- Pixels are dynamically created by script.js (400 total) -->
-      <div id="second"></div>
-
-      <!-- Recognition Button: Triggers forward propagation on user's drawing -->
-      <button onclick="neural_network_main()" id="enterdatabutton">
-        Enter you written data
-      </button>
-
-      <!-- Training Button: Initiates backpropagation training loop -->
-      <button onclick="train_button()" id="traindatabutton">
-        Train the neural network
-      </button>
-    </div>
-
-    <br>
-    
-    <!-- ============================================================
-         HYPERPARAMETER CONTROLS
-         Allows users to adjust training settings without code changes
-         ============================================================ -->
-    <div id="secondmaincontainer">
-        
-        <!-- Learning Rate (Alpha): Controls gradient descent step size
-             Typical range: 0.001 - 1.0 (default: 0.1) -->
-        Alpha (Learning Rate): <input type="text" id="alpha_value" value="0.1"> 
-        
-        <!-- Training Iterations: Number of epochs/iterations to run
-             More iterations = longer training but potentially better accuracy -->
-        Training Length: <input type="text" id="train_length_input" value="20">
-        
-        <!-- Regularization (Lambda): L2 regularization coefficient
-             Prevents overfitting by penalizing large weights
-             Typical range: 0.000001 - 0.01 -->
-        Lambda (Regularization Value): <input type="text" id="lambda_value" value="0.000001">
-      
-        <!-- Submit Button: Applies the hyperparameter changes -->
-        <input type="submit" id="alpha_submit">
-      
-        <!-- Cost/Accuracy Display: Shows current training metrics -->
-        <div id="cost_value_output"></div>
-    </div>
+    </header>
 
     <!-- ============================================================
-         LOADING BAR: Shows training progress
-         Hidden by default, displayed during training
+         MAIN APPLICATION CONTAINER
          ============================================================ -->
-    <div id="loadbar">
-      <div id="loadbartitle">Training Process</div>
-      <div id="loadbarmain"></div>
+    <main class="main-app">
+      
+      <!-- Drawing Section -->
+      <section class="drawing-section">
+        <div class="card drawing-card">
+          <div class="card-header">
+            <i class="fas fa-pencil-alt"></i>
+            <h2>Draw Here</h2>
+          </div>
+          <div class="card-body">
+            <!-- Drawing Grid: 20x20 pixel canvas -->
+            <div id="second" class="drawing-grid"></div>
+            <button onclick="clearCanvas()" class="btn btn-secondary btn-clear">
+              <i class="fas fa-eraser"></i> Clear Canvas
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Output Section -->
+      <section class="output-section">
+        <div class="card output-card" id="first">
+          <div class="card-header">
+            <i class="fas fa-chart-pie"></i>
+            <h2>Prediction</h2>
+          </div>
+          <div class="card-body">
+            <div id="output_text" class="prediction-output">
+              <p class="placeholder-text">Draw a digit and click "Recognize"</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Action Buttons -->
+      <section class="actions-section">
+        <button onclick="neural_network_main()" id="enterdatabutton" class="btn btn-primary btn-large">
+          <i class="fas fa-magic"></i>
+          Recognize Digit
+        </button>
+        <button onclick="train_button()" id="traindatabutton" class="btn btn-accent btn-large">
+          <i class="fas fa-graduation-cap"></i>
+          Train Network
+        </button>
+      </section>
+
+    </main>
+
+    <!-- ============================================================
+         HYPERPARAMETER CONTROLS PANEL
+         ============================================================ -->
+    <section class="controls-section">
+      <div class="card controls-card">
+        <div class="card-header">
+          <i class="fas fa-sliders-h"></i>
+          <h2>Training Parameters</h2>
+        </div>
+        <div class="card-body">
+          <div class="controls-grid">
+            
+            <div class="control-group">
+              <label for="alpha_value">
+                <i class="fas fa-tachometer-alt"></i>
+                Learning Rate (α)
+              </label>
+              <input type="number" id="alpha_value" value="0.1" step="0.01" min="0.001" max="1">
+              <span class="control-hint">Controls gradient descent step size</span>
+            </div>
+            
+            <div class="control-group">
+              <label for="train_length_input">
+                <i class="fas fa-redo"></i>
+                Training Iterations
+              </label>
+              <input type="number" id="train_length_input" value="20" min="1" max="200">
+              <span class="control-hint">Number of training epochs</span>
+            </div>
+            
+            <div class="control-group">
+              <label for="lambda_value">
+                <i class="fas fa-shield-alt"></i>
+                Regularization (λ)
+              </label>
+              <input type="number" id="lambda_value" value="0.000001" step="0.000001" min="0">
+              <span class="control-hint">L2 regularization to prevent overfitting</span>
+            </div>
+            
+            <div class="control-group control-button">
+              <button id="alpha_submit" class="btn btn-success">
+                <i class="fas fa-check"></i>
+                Apply Settings
+              </button>
+            </div>
+            
+          </div>
+          
+          <!-- Training Metrics Display -->
+          <div id="cost_value_output" class="metrics-display"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         TRAINING PROGRESS MODAL
+         ============================================================ -->
+    <div id="loadbar" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <i class="fas fa-cog fa-spin"></i>
+          <span id="loadbartitle">Training in Progress...</span>
+        </div>
+        <div class="progress-container">
+          <div id="loadbarmain" class="progress-bar"></div>
+        </div>
+        <p class="progress-text">Please wait while the neural network learns</p>
+      </div>
     </div>
 
     <!-- ============================================================
          TRAINING METRICS CHART
-         Displays cost and accuracy trends during training
-         Uses Chart.js library for visualization
          ============================================================ -->
-    <canvas id="graphcanvas" style="display: fixed;"></canvas>
-    
-    <!-- Chart.js Library: External library for data visualization -->
+    <section class="chart-section">
+      <div class="card chart-card">
+        <div class="card-header">
+          <i class="fas fa-chart-line"></i>
+          <h2>Training Progress</h2>
+        </div>
+        <div class="card-body">
+          <canvas id="graphcanvas"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         FOOTER
+         ============================================================ -->
+    <footer class="footer">
+      <div class="footer-content">
+        <p>Created with <i class="fas fa-heart"></i> by <strong>Akhil Sirvi</strong></p>
+        <p class="footer-links">
+          <a href="https://github.com/akhilsirvi/Multi-Layer-Perceptron" target="_blank">
+            <i class="fab fa-github"></i> View on GitHub
+          </a>
+        </p>
+      </div>
+    </footer>
+
+    <!-- ============================================================
+         SCRIPTS
+         ============================================================ -->
+    <!-- Chart.js Library -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- Graph Module: Handles chart generation and updates -->
+    <!-- Application Scripts -->
     <script src="../scripts/graph.js" defer></script>
-    
-    <!-- Math Module: Mathematical operations for neural network -->
     <script src="../scripts/maths.js" defer></script>
 
-    <!-- 
-      Main Script Loading:
-      Loaded dynamically after DOM is ready to ensure all elements exist
-      Contains: pixel grid creation, event handlers, training loop, prediction
-    -->
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         // Dynamically load the main neural network script
@@ -117,7 +200,19 @@
         script.src = "../scripts/script.js";
         document.body.appendChild(script);
       });
+
+      // Clear canvas function
+      function clearCanvas() {
+        const boxes = document.querySelectorAll('.box');
+        boxes.forEach(box => {
+          box.style.background = 'white';
+        });
+        document.getElementById('output_text').innerHTML = '<p class="placeholder-text">Draw a digit and click "Recognize"</p>';
+      }
     </script>
+
+  </body>
+</html>
 
   </body>
 </html>
