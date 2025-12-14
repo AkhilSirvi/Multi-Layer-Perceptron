@@ -177,6 +177,34 @@
         <div class="card-header">
           <i class="fas fa-chart-line"></i>
           <h2>Training Progress</h2>
+          
+          <!-- Graph View Controls -->
+          <div class="chart-controls">
+            <span class="chart-controls-label">Scale:</span>
+            <div class="btn-group" id="scaleTypeGroup">
+              <button class="btn-chip active" data-scale="linear" onclick="setGraphScale('linear')">
+                <i class="fas fa-grip-lines"></i> Linear
+              </button>
+              <button class="btn-chip" data-scale="logarithmic" onclick="setGraphScale('logarithmic')">
+                <i class="fas fa-wave-square"></i> Logarithmic
+              </button>
+            </div>
+            <span class="chart-controls-label">Chart:</span>
+            <div class="btn-group" id="chartTypeGroup">
+              <button class="btn-chip active" data-chart="line" onclick="setChartType('line')">
+                <i class="fas fa-chart-line"></i> Line
+              </button>
+              <button class="btn-chip" data-chart="bar" onclick="setChartType('bar')">
+                <i class="fas fa-chart-bar"></i> Bar
+              </button>
+            </div>
+            <button class="btn-chip btn-chip-icon" onclick="toggleFill()" id="fillToggle" title="Toggle Fill">
+              <i class="fas fa-fill-drip"></i>
+            </button>
+            <button class="btn-chip btn-chip-icon" onclick="resetGraphData()" title="Reset Graph">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </div>
         </div>
         <div class="card-body">
           <canvas id="graphcanvas"></canvas>

@@ -851,3 +851,89 @@ body::before {
 .toggle-label.active {
   color: var(--success-color);
 }
+
+/* =============================================================================
+   CHART CONTROLS STYLES
+   ============================================================================= */
+.chart-card .card-header {
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.chart-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.chart-controls-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-group {
+  display: flex;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 3px;
+  border-radius: var(--radius-md);
+}
+
+.btn-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.btn-chip:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-chip.active {
+  color: var(--text-primary);
+  background: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+}
+
+.btn-chip-icon {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-md);
+}
+
+.btn-chip-icon.active {
+  background: var(--primary-color);
+}
+
+.btn-chip i {
+  font-size: 0.7rem;
+}
+
+@media only screen and (max-width: 834px) {
+  .chart-controls {
+    width: 100%;
+    justify-content: flex-start;
+    margin-left: 0;
+    margin-top: var(--spacing-sm);
+  }
+  
+  .chart-card .card-header h2 {
+    flex: 1;
+  }
+}

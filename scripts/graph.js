@@ -6,84 +6,156 @@
  * - Cost (Loss) on the left Y-axis - should decrease during training
  * - Accuracy (%) on the right Y-axis - should increase during training
  * 
+ * Supports multiple visualization options:
+ * - Scale types: Linear, Logarithmic
+ * - Chart types: Line, Bar
+ * - Fill toggle for area charts
+ * 
  * @module graph
  */
 
 /** Reference to the Chart.js instance (stored for cleanup/update purposes) */
 let chart;
 
+/** Current graph configuration options */
+let graphConfig = {
+    scaleType: 'linear',      // 'linear' or 'logarithmic'
+    chartType: 'line',        // 'line' or 'bar'
+    showFill: true,           // Whether to show area fill
+};
+
+/** Stored data for re-rendering with different options */
+let storedGraphCost = [];
+let storedGraphAccuracies = [];
+
 /**
- * Generates and updates the training metrics chart
- * 
- * Parses the graphdata string containing training logs and extracts:
- * - Cost values from lines like "the cost is X.XXX"
- * - Accuracy values from lines like "The accuracy is XX"
- * 
- * Creates a dual-axis line chart showing training progress over iterations
- * Destroys the previous chart instance before creating a new one to prevent
- * memory leaks and rendering issues
+ * Sets the Y-axis scale type and regenerates the chart
+ * @param {string} scaleType - 'linear' or 'logarithmic'
  */
-function graphgenerater() {
-    // Regex patterns to extract metrics from the graphdata string
-    const costPattern = /the cost is (\d+\.\d+)/g;      // Matches: "the cost is 2.345"
-    const accuracyPattern = /The accuracy is (\d+)/g;   // Matches: "The accuracy is 85"
-
-    let costMatches;
-    let accuracyMatches;
-
-    // Arrays to store extracted metric values
-    const graphcost = [];        // Cost values for each training iteration
-    const graphaccuracies = [];  // Accuracy values for each training iteration
-
-    // Extract all cost values from the graphdata string
-    while ((costMatches = costPattern.exec(graphdata)) !== null) {
-        graphcost.push(parseFloat(costMatches[1]));
+function setGraphScale(scaleType) {
+    graphConfig.scaleType = scaleType;
+    
+    // Update button states
+    document.querySelectorAll('#scaleTypeGroup .btn-chip').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.scale === scaleType);
+    });
+    
+    // Regenerate chart with new scale
+    if (storedGraphCost.length > 0) {
+        renderChart();
     }
-  
-    // Extract all accuracy values from the graphdata string
-    while ((accuracyMatches = accuracyPattern.exec(graphdata)) !== null) {
-        graphaccuracies.push(parseInt(accuracyMatches[1]));
+}
+
+/**
+ * Sets the chart type and regenerates the chart
+ * @param {string} chartType - 'line' or 'bar'
+ */
+function setChartType(chartType) {
+    graphConfig.chartType = chartType;
+    
+    // Update button states
+    document.querySelectorAll('#chartTypeGroup .btn-chip').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.chart === chartType);
+    });
+    
+    // Regenerate chart with new type
+    if (storedGraphCost.length > 0) {
+        renderChart();
     }
-  
+}
+
+/**
+ * Toggles the fill/area display on the chart
+ */
+function toggleFill() {
+    graphConfig.showFill = !graphConfig.showFill;
+    
+    // Update button state
+    const fillBtn = document.getElementById('fillToggle');
+    if (fillBtn) {
+        fillBtn.classList.toggle('active', graphConfig.showFill);
+    }
+    
+    // Regenerate chart
+    if (storedGraphCost.length > 0) {
+        renderChart();
+    }
+}
+
+/**
+ * Resets the graph data and clears the chart
+ */
+function resetGraphData() {
+    graphdata = '';
+    storedGraphCost = [];
+    storedGraphAccuracies = [];
+    
+    if (chart) {
+        chart.destroy();
+        chart = null;
+    }
+    
+    console.log('Graph data reset');
+}
+
+/**
+ * Renders the chart with current configuration
+ * Called internally after data or settings change
+ */
+function renderChart() {
     // Get the 2D rendering context for the canvas element
     const ctx = document.getElementById("graphcanvas").getContext("2d");
     
-    // Destroy existing chart to prevent memory leaks and overlapping charts
+    // Destroy existing chart to prevent memory leaks
     if (chart) {
         chart.destroy();
     }
     
-    // Create new Chart.js line chart with dual Y-axes
+    // For logarithmic scale, filter out zero/negative values and add small offset
+    let costData = [...storedGraphCost];
+    let accuracyData = [...storedGraphAccuracies];
+    
+    if (graphConfig.scaleType === 'logarithmic') {
+        // Add small offset to prevent log(0) issues
+        costData = costData.map(v => v <= 0 ? 0.001 : v);
+        accuracyData = accuracyData.map(v => v <= 0 ? 0.1 : v);
+    }
+    
+    // Create new Chart.js chart
     chart = new Chart(ctx, {
-        type: "line",  // Line chart for showing trends over time
+        type: graphConfig.chartType,
         data: {
-            // X-axis labels: iteration numbers (1, 2, 3, ...)
-            labels: Array.from({ length: graphcost.length }, (_, i) => i + 1),
+            labels: Array.from({ length: costData.length }, (_, i) => i + 1),
             datasets: [
                 {
-                    // Dataset 1: Cost (Loss) - should decrease during successful training
                     label: "Cost",
-                    data: graphcost,
+                    data: costData,
                     borderColor: "#6366f1",
-                    backgroundColor: "rgba(99, 102, 241, 0.2)",
-                    yAxisID: "y1",  // Use left Y-axis
-                    tension: 0.3,
-                    fill: true,
+                    backgroundColor: graphConfig.showFill ? "rgba(99, 102, 241, 0.2)" : "transparent",
+                    yAxisID: "y1",
+                    tension: graphConfig.chartType === 'line' ? 0.3 : 0,
+                    fill: graphConfig.showFill && graphConfig.chartType === 'line',
+                    borderWidth: 2,
+                    pointRadius: graphConfig.chartType === 'line' ? 3 : 0,
+                    pointHoverRadius: 6,
                 },
                 {
-                    // Dataset 2: Accuracy - should increase during successful training
                     label: "Accuracy (%)",
-                    data: graphaccuracies,
+                    data: accuracyData,
                     borderColor: "#10b981",
-                    backgroundColor: "rgba(16, 185, 129, 0.2)",
-                    yAxisID: "y2",  // Use right Y-axis
-                    tension: 0.3,
-                    fill: true,
+                    backgroundColor: graphConfig.showFill ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.6)",
+                    yAxisID: "y2",
+                    tension: graphConfig.chartType === 'line' ? 0.3 : 0,
+                    fill: graphConfig.showFill && graphConfig.chartType === 'line',
+                    borderWidth: 2,
+                    pointRadius: graphConfig.chartType === 'line' ? 3 : 0,
+                    pointHoverRadius: 6,
                 },
             ],
         },
         options: {
-            responsive: true,  // Chart resizes with container
+            responsive: true,
+            maintainAspectRatio: true,
             interaction: {
                 mode: 'index',
                 intersect: false,
@@ -91,18 +163,38 @@ function graphgenerater() {
             plugins: {
                 legend: {
                     labels: {
-                        color: '#f8fafc',  // Light text for dark theme
+                        color: '#f8fafc',
                         font: {
                             family: "'Poppins', sans-serif",
-                        }
+                        },
+                        usePointStyle: true,
+                        pointStyle: 'circle',
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                    backgroundColor: 'rgba(30, 41, 59, 0.95)',
                     titleColor: '#f8fafc',
                     bodyColor: '#94a3b8',
                     borderColor: 'rgba(255, 255, 255, 0.2)',
                     borderWidth: 1,
+                    padding: 12,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                if (context.dataset.yAxisID === 'y2') {
+                                    label += context.parsed.y.toFixed(1) + '%';
+                                } else {
+                                    label += context.parsed.y.toFixed(4);
+                                }
+                            }
+                            return label;
+                        }
+                    }
                 }
             },
             scales: {
@@ -123,13 +215,12 @@ function graphgenerater() {
                     }
                 },
                 y1: {
-                    // Left Y-axis: Cost values (dynamic scale)
-                    type: 'linear',
+                    type: graphConfig.scaleType,
                     display: true,
                     position: 'left',
                     title: {
                         display: true,
-                        text: 'Cost',
+                        text: graphConfig.scaleType === 'logarithmic' ? 'Cost (log scale)' : 'Cost',
                         color: '#6366f1',
                         font: {
                             family: "'Poppins', sans-serif",
@@ -137,21 +228,26 @@ function graphgenerater() {
                     },
                     ticks: {
                         color: '#6366f1',
+                        callback: function(value) {
+                            if (graphConfig.scaleType === 'logarithmic') {
+                                return value.toExponential(1);
+                            }
+                            return value.toFixed(2);
+                        }
                     },
                     grid: {
                         color: 'rgba(99, 102, 241, 0.1)',
                     }
                 },
                 y2: {
-                    // Right Y-axis: Accuracy percentage (fixed 0-100 scale)
-                    type: 'linear',
+                    type: graphConfig.scaleType === 'logarithmic' ? 'logarithmic' : 'linear',
                     display: true,
                     position: 'right',
-                    min: 0,
+                    min: graphConfig.scaleType === 'logarithmic' ? 0.1 : 0,
                     max: 100,
                     title: {
                         display: true,
-                        text: 'Accuracy (%)',
+                        text: graphConfig.scaleType === 'logarithmic' ? 'Accuracy (log scale)' : 'Accuracy (%)',
                         color: '#10b981',
                         font: {
                             family: "'Poppins', sans-serif",
@@ -159,12 +255,50 @@ function graphgenerater() {
                     },
                     ticks: {
                         color: '#10b981',
+                        callback: function(value) {
+                            return value + '%';
+                        }
                     },
                     grid: {
-                        drawOnChartArea: false,  // Don't draw grid lines for right axis
+                        drawOnChartArea: false,
                     }
                 },
             },
         },
     });
+}
+
+/**
+ * Generates and updates the training metrics chart
+ * 
+ * Parses the graphdata string containing training logs and extracts:
+ * - Cost values from lines like "the cost is X.XXX"
+ * - Accuracy values from lines like "The accuracy is XX"
+ * 
+ * Creates a dual-axis chart showing training progress over iterations
+ */
+function graphgenerater() {
+    // Regex patterns to extract metrics from the graphdata string
+    const costPattern = /the cost is (\d+\.\d+)/g;
+    const accuracyPattern = /The accuracy is (\d+)/g;
+
+    let costMatches;
+    let accuracyMatches;
+
+    // Arrays to store extracted metric values
+    storedGraphCost = [];
+    storedGraphAccuracies = [];
+
+    // Extract all cost values from the graphdata string
+    while ((costMatches = costPattern.exec(graphdata)) !== null) {
+        storedGraphCost.push(parseFloat(costMatches[1]));
+    }
+  
+    // Extract all accuracy values from the graphdata string
+    while ((accuracyMatches = accuracyPattern.exec(graphdata)) !== null) {
+        storedGraphAccuracies.push(parseInt(accuracyMatches[1]));
+    }
+  
+    // Render the chart with current configuration
+    renderChart();
 }
