@@ -1,5 +1,28 @@
 # Multi-Layer Perceptron Neural Network
 
+<p align="center">
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript">
+  <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5">
+  <img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white" alt="CSS3">
+  <img src="https://img.shields.io/badge/Chart.js-FF6384?style=for-the-badge&logo=chartdotjs&logoColor=white" alt="Chart.js">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Neural_Network-MLP-6366f1?style=flat-square" alt="Neural Network">
+  <img src="https://img.shields.io/badge/Layers-3-10b981?style=flat-square" alt="Layers">
+  <img src="https://img.shields.io/badge/Neurons-400→16→16→10-f59e0b?style=flat-square" alt="Neurons">
+  <img src="https://img.shields.io/badge/Activation-TanH_|_Softmax-ec4899?style=flat-square" alt="Activation">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/github/license/AkhilSirvi/Multi-Layer-Perceptron?style=flat-square&color=22c55e" alt="License">
+  <img src="https://img.shields.io/github/stars/AkhilSirvi/Multi-Layer-Perceptron?style=flat-square&color=eab308" alt="Stars">
+  <img src="https://img.shields.io/github/forks/AkhilSirvi/Multi-Layer-Perceptron?style=flat-square&color=3b82f6" alt="Forks">
+  <img src="https://img.shields.io/badge/PRs-Welcome-22d3ee?style=flat-square" alt="PRs Welcome">
+</p>
+
+---
+
 A fully functional neural network system for handwritten digit recognition, built from scratch using vanilla JavaScript. This project implements a 3-layer Multi-Layer Perceptron (MLP) that can recognize digits 0-9 drawn by users.
 
 🔗 **Live Demo:** [https://akhilsirvi.github.io/Multi-Layer-Perceptron/src/index.html](https://akhilsirvi.github.io/Multi-Layer-Perceptron/src/index.html)
