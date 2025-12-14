@@ -64,49 +64,106 @@ function graphgenerater() {
                     // Dataset 1: Cost (Loss) - should decrease during successful training
                     label: "Cost",
                     data: graphcost,
-                    borderColor: "blue",
-                    backgroundColor: "rgba(0, 0, 255, 0.2)",
-                    yAxisID: "y-axis-1",  // Use left Y-axis
+                    borderColor: "#6366f1",
+                    backgroundColor: "rgba(99, 102, 241, 0.2)",
+                    yAxisID: "y1",  // Use left Y-axis
+                    tension: 0.3,
+                    fill: true,
                 },
                 {
                     // Dataset 2: Accuracy - should increase during successful training
                     label: "Accuracy (%)",
                     data: graphaccuracies,
-                    borderColor: "red",
-                    backgroundColor: "rgba(255, 0, 0, 0.2)",
-                    yAxisID: "y-axis-2",  // Use right Y-axis
+                    borderColor: "#10b981",
+                    backgroundColor: "rgba(16, 185, 129, 0.2)",
+                    yAxisID: "y2",  // Use right Y-axis
+                    tension: 0.3,
+                    fill: true,
                 },
             ],
         },
         options: {
             responsive: true,  // Chart resizes with container
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#f8fafc',  // Light text for dark theme
+                        font: {
+                            family: "'Poppins', sans-serif",
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                    titleColor: '#f8fafc',
+                    bodyColor: '#94a3b8',
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    borderWidth: 1,
+                }
+            },
             scales: {
-                yAxes: [
-                    {
-                        // Left Y-axis: Cost values (dynamic scale)
-                        id: "y-axis-1",
-                        type: "linear",
-                        position: "left",
-                        scaleLabel: {
-                            display: true,
-                            labelString: "Cost",  // Axis label
-                        },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Training Iteration',
+                        color: '#94a3b8',
+                        font: {
+                            family: "'Poppins', sans-serif",
+                        }
                     },
-                    {
-                        // Right Y-axis: Accuracy percentage (fixed 0-100 scale)
-                        id: "y-axis-2",
-                        type: "linear",
-                        position: "right",
-                        ticks: {
-                            max: 100,  // Maximum accuracy is 100%
-                            min: 0,    // Minimum accuracy is 0%
-                        },
-                        scaleLabel: {
-                            display: true,
-                            labelString: "Accuracy (%)",  // Axis label
-                        },
+                    ticks: {
+                        color: '#94a3b8',
                     },
-                ],
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)',
+                    }
+                },
+                y1: {
+                    // Left Y-axis: Cost values (dynamic scale)
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Cost',
+                        color: '#6366f1',
+                        font: {
+                            family: "'Poppins', sans-serif",
+                        }
+                    },
+                    ticks: {
+                        color: '#6366f1',
+                    },
+                    grid: {
+                        color: 'rgba(99, 102, 241, 0.1)',
+                    }
+                },
+                y2: {
+                    // Right Y-axis: Accuracy percentage (fixed 0-100 scale)
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    min: 0,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Accuracy (%)',
+                        color: '#10b981',
+                        font: {
+                            family: "'Poppins', sans-serif",
+                        }
+                    },
+                    ticks: {
+                        color: '#10b981',
+                    },
+                    grid: {
+                        drawOnChartArea: false,  // Don't draw grid lines for right axis
+                    }
+                },
             },
         },
     });

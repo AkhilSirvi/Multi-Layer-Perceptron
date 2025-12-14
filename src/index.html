@@ -123,6 +123,21 @@
               <span class="control-hint">L2 regularization to prevent overfitting</span>
             </div>
             
+            <div class="control-group">
+              <label for="augmentation_toggle">
+                <i class="fas fa-random"></i>
+                Data Augmentation
+              </label>
+              <div class="toggle-container">
+                <label class="toggle-switch">
+                  <input type="checkbox" id="augmentation_toggle" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label" id="augmentation_status">Enabled</span>
+              </div>
+              <span class="control-hint">Random rotation, translation & noise</span>
+            </div>
+            
             <div class="control-group control-button">
               <button id="alpha_submit" class="btn btn-success">
                 <i class="fas fa-check"></i>

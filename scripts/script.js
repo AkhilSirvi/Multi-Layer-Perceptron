@@ -801,6 +801,9 @@ let training_length = 20;
 /** Current progress percentage for the loading bar */
 let loadpercent = 0;
 
+/** Flag to enable/disable data augmentation during training */
+let useDataAugmentation = true;
+
 // Initialize loading bar width
 loadbar.style.width = "calc(90%/" + training_length + "*" + loadpercent + ")";
 
@@ -809,7 +812,7 @@ let train_interval = null;
 
 /**
  * Initiates the training process when user clicks "Train the neural network" button
- * Runs multiple training iterations with data augmentation
+ * Runs multiple training iterations with optional data augmentation
  * Displays progress via loading bar
  */
 function train_button() {
@@ -818,8 +821,10 @@ function train_button() {
   
   // Training loop - run for specified number of iterations
   for (let trainingloop = 0; trainingloop < training_length; trainingloop++) {
-    // Apply random augmentation to training data for each iteration
-    randomnessadder(Neural_Network_Train_Data, neuralnetworkdatacopy);
+    // Apply random augmentation to training data if enabled
+    if (useDataAugmentation) {
+      randomnessadder(Neural_Network_Train_Data, neuralnetworkdatacopy);
+    }
     
     // Run one training iteration (forward prop + backprop + parameter update)
     train_neural_network();
@@ -858,3 +863,21 @@ alpha_submit.addEventListener("click", () => {
   lambda = parseFloat(document.getElementById("lambda_value").value);  // Update regularization
   training_length = parseFloat(train_length_input.value);  // Update number of training iterations
 });
+
+/**
+ * Event listener for data augmentation toggle
+ * Enables/disables random transformations (rotation, translation, noise) during training
+ */
+const augmentationToggle = document.getElementById("augmentation_toggle");
+const augmentationStatus = document.getElementById("augmentation_status");
+
+if (augmentationToggle) {
+  augmentationToggle.addEventListener("change", () => {
+    useDataAugmentation = augmentationToggle.checked;
+    if (augmentationStatus) {
+      augmentationStatus.textContent = useDataAugmentation ? "Enabled" : "Disabled";
+      augmentationStatus.classList.toggle("active", useDataAugmentation);
+    }
+    console.log("Data Augmentation: " + (useDataAugmentation ? "Enabled" : "Disabled"));
+  });
+}
