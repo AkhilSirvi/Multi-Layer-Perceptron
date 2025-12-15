@@ -1,19 +1,42 @@
 /**
- * Multi-Layer Perceptron (MLP) Neural Network for Handwritten Digit Recognition
+ * @fileoverview Multi-Layer Perceptron (MLP) Neural Network for Digit Recognition
  * 
- * This script implements a 3-layer neural network that can:
- * 1. Recognize handwritten digits (0-9) drawn by the user
- * 2. Train on the MNIST-style dataset using backpropagation
- * 3. Display training progress with cost and accuracy metrics
+ * A 3-layer neural network that recognizes handwritten digits (0-9) drawn by users.
+ * Implements complete forward propagation, backpropagation, and gradient descent.
  * 
  * Network Architecture:
- * - Input Layer (A_0): 400 neurons (20x20 pixel grid)
- * - Hidden Layer 1 (A_1): 16 neurons with TanH activation
- * - Hidden Layer 2 (A_2): 16 neurons with TanH activation
- * - Output Layer (A_3): 10 neurons (digits 0-9) with Softmax activation
+ *   Input Layer (A_0):  400 neurons (20×20 pixel grid, flattened)
+ *   Hidden Layer 1 (A_1): 16 neurons with TanH activation
+ *   Hidden Layer 2 (A_2): 16 neurons with TanH activation
+ *   Output Layer (A_3):  10 neurons (digits 0-9) with Softmax
+ * 
+ * Training Algorithm:
+ *   - Loss Function: Cross-Entropy
+ *   - Optimization: Mini-batch Gradient Descent with L2 Regularization
+ *   - Data Augmentation: Translation, Rotation, Noise
  * 
  * @author Akhil Sirvi
+ * @version 2.0.0
  */
+
+'use strict';
+
+/* =============================================================================
+ * NEURAL NETWORK ARCHITECTURE CONFIGURATION
+ * ============================================================================= */
+
+/**
+ * Network Architecture Constants
+ * Defines the structure of the Multi-Layer Perceptron
+ */
+const NETWORK_CONFIG = Object.freeze({
+    INPUT_SIZE: 400,    // 20×20 pixel grid (flattened)
+    HIDDEN_1_SIZE: 16,  // First hidden layer neurons
+    HIDDEN_2_SIZE: 16,  // Second hidden layer neurons
+    OUTPUT_SIZE: 10,    // Digit classes (0-9)
+    GRID_WIDTH: 20,     // Drawing grid width
+    GRID_HEIGHT: 20     // Drawing grid height
+});
 
 /* =============================================================================
  * DOM ELEMENT REFERENCES
@@ -48,30 +71,22 @@ let alpha_submit = document.getElementById("alpha_submit");
  * ============================================================================= */
 
 /**
- * Creates a 20x20 pixel grid (400 pixels) for drawing digits
- * Each pixel is a clickable/hoverable div element that can be toggled to black
- * This forms the input layer of the neural network
+ * Creates the interactive pixel grid for drawing digits
+ * 
+ * Generates a 20×20 grid (400 pixels) where users can draw.
+ * Each pixel is a div element that toggles between white (0) and black (1).
+ * This grid forms the input layer of the neural network.
  */
 function pixel_creater() {
-  for (let pixel_creater_i = 0; pixel_creater_i < 400; pixel_creater_i++) {
-    // Create a new div element for each pixel
-    let pixel = document.createElement("div");
-    second_box.appendChild(pixel);
+    const totalPixels = NETWORK_CONFIG.GRID_WIDTH * NETWORK_CONFIG.GRID_HEIGHT;
     
-    // Generate unique IDs for row/column tracking
-    let pixel_creater_v = 1;
-    let pixel_creater_k = 1;
-    pixel_creater_v++;
-    if (pixel_creater_v == 10) {
-      pixel_creater_k++;
-      pixel_creater_v = 0;
+    for (let i = 0; i < totalPixels; i++) {
+        const pixel = document.createElement("div");
+        pixel.className = "box";
+        pixel.draggable = false;
+        pixel.dataset.index = i;  // Store pixel index for debugging
+        second_box.appendChild(pixel);
     }
-    
-    // Assign ID, class, and disable default drag behavior
-    pixel.id = pixel_creater_v + "rowbox" + pixel_creater_k;
-    pixel.className = "box";
-    pixel.draggable = false;
-  }
 }
 
 // Initialize the drawing grid on page load
@@ -115,7 +130,14 @@ body.addEventListener("mouseup", (event) => {
  * Supports both mouse (desktop) and touch (mobile) interactions
  */
 button.forEach((button) => {
-  // Desktop: Draw when hovering with mouse button pressed
+  // Desktop: Draw on single click (for individual pixels)
+  button.addEventListener("mousedown", (event) => {
+    if (event.buttons === 1) {
+      button.style.background = "black";
+    }
+  });
+
+  // Desktop: Draw when hovering with mouse button pressed (for dragging)
   button.addEventListener("mouseover", () => {
     if (click == true) {
       button.style.background = "black";
@@ -138,31 +160,36 @@ button.forEach((button) => {
 });
 
 /* =============================================================================
- * NEURAL NETWORK ARCHITECTURE CONFIGURATION
+ * LAYER DIMENSIONS & ACTIVATION ARRAYS
  * ============================================================================= */
 
 /**
- * Layer dimensions define the network architecture:
- * - A_0 (Input):   400 neurons - Represents 20x20 pixel grid (flattened)
- * - A_1 (Hidden1): 16 neurons  - First hidden layer with TanH activation
- * - A_2 (Hidden2): 16 neurons  - Second hidden layer with TanH activation  
- * - A_3 (Output):  10 neurons  - One neuron per digit (0-9) with Softmax
+ * Layer dimensions (used throughout the network)
+ * Kept as variables for backward compatibility with existing code
  */
-let A_0_length = 400;  // Input layer: 20x20 = 400 pixels
-let A_1_length = 16;   // First hidden layer neurons
-let A_2_length = 16;   // Second hidden layer neurons
-let A_3_length = 10;   // Output layer: 10 digit classes (0-9)
+let A_0_length = NETWORK_CONFIG.INPUT_SIZE;
+let A_1_length = NETWORK_CONFIG.HIDDEN_1_SIZE;
+let A_2_length = NETWORK_CONFIG.HIDDEN_2_SIZE;
+let A_3_length = NETWORK_CONFIG.OUTPUT_SIZE;
 
-/** Activation arrays for each layer (populated during forward propagation) */
-let A_0 = [];  // Input activations (pixel values: 0 or 1)
-let A_1 = [];  // First hidden layer activations
-let A_2 = [];  // Second hidden layer activations
+/** 
+ * Activation arrays for each layer
+ * Populated during forward propagation, reset between predictions
+ */
+let A_0 = [];  // Input layer activations (pixel values: 0 or 1)
+let A_1 = [];  // Hidden layer 1 activations (after TanH)
+let A_2 = [];  // Hidden layer 2 activations (after TanH)
 let A_3 = [];  // Output layer activations (before softmax)
 
 /**
- * Learning rate (alpha) - Controls the step size during gradient descent
- * Smaller values = slower but more stable learning
- * Larger values = faster but potentially unstable learning
+ * Learning Rate (α/alpha)
+ * 
+ * Controls the step size during gradient descent optimization.
+ * - Smaller values (0.001-0.01): Slower but more stable convergence
+ * - Larger values (0.1-1.0): Faster but potentially unstable/overshooting
+ * 
+ * Recommended: Start with 0.01-0.1, adjust based on loss curve
+ * @type {number}
  */
 let alpha = 0.1;
 
@@ -254,28 +281,36 @@ function B_3_function_random_no() {
  * ============================================================================= */
 
 /**
- * Gradient variables for backpropagation:
- * dZ = Gradient of cost with respect to the pre-activation (z)
- * dW = Gradient of cost with respect to weights
- * dB = Gradient of cost with respect to biases
+ * Gradient Variables for Backpropagation
  * 
- * These gradients are computed during backpropagation and used to update
- * the network's weights and biases using gradient descent.
+ * Naming Convention:
+ *   dZ = ∂L/∂z (gradient w.r.t. pre-activation)
+ *   dW = ∂L/∂W (gradient w.r.t. weights)
+ *   dB = ∂L/∂b (gradient w.r.t. biases)
+ * 
+ * These gradients are computed during backpropagation and used
+ * to update parameters via gradient descent.
  */
-let dZ3 = [];   // Output layer gradient
-let dW3 = [];   // Output layer weight gradient
-let dB3 = [];   // Output layer bias gradient
-let dZ2 = null; // Second hidden layer gradient
-let dW2 = [];   // Second hidden layer weight gradient
-let dB2 = [];   // Second hidden layer bias gradient
-let dZ1 = null; // First hidden layer gradient
-let dW1 = [];   // First hidden layer weight gradient
-let dB1 = [];   // First hidden layer bias gradient
+let dZ3 = [];   // Output layer: ∂L/∂z³
+let dW3 = [];   // Output layer: ∂L/∂W³
+let dB3 = [];   // Output layer: ∂L/∂b³
+let dZ2 = null; // Hidden layer 2: ∂L/∂z²
+let dW2 = [];   // Hidden layer 2: ∂L/∂W²
+let dB2 = [];   // Hidden layer 2: ∂L/∂b²
+let dZ1 = null; // Hidden layer 1: ∂L/∂z¹
+let dW1 = [];   // Hidden layer 1: ∂L/∂W¹
+let dB1 = [];   // Hidden layer 1: ∂L/∂b¹
 
-/** Number of training examples (m) - used for averaging gradients */
+/** 
+ * Number of training examples (m)
+ * Used for averaging gradients across the batch
+ */
 let m = Object.keys(Neural_Network_Train_Data).length;
 
-/** String to accumulate training metrics for graph visualization */
+/** 
+ * Training metrics string for graph visualization
+ * Accumulates cost and accuracy values across iterations
+ */
 let graphdata = ``;
 
 /* =============================================================================
@@ -338,7 +373,7 @@ function train_neural_network() {
       
       // Apply softmax to get probability distribution
       softmax_xA_3 = softmax(xA_3);
-      othersoftmax = softmax(xA_3); // Copy for accuracy calculation
+      let othersoftmax = softmax(xA_3); // Copy for accuracy calculation
       
       // Compute output layer gradient: dZ3 = predicted - actual (one-hot encoded)
       // Subtracting 1 from the true class creates the gradient for cross-entropy loss
@@ -564,58 +599,53 @@ function train_neural_network() {
 
 /**
  * Main function for digit recognition
- * Called when user clicks "Enter your written data" button
+ * Called when user clicks "Recognize" button
  * Performs forward propagation on user-drawn input and displays prediction
  */
+let newinterval = null;  // Interval reference (legacy, kept for compatibility)
+
 function neural_network_main() {
-  // Set up interval to continuously process drawing (allows real-time updates)
-  newinterval = setInterval(() => {
-    // Convert the pixel grid to input array (0 = white, 1 = black)
-    button.forEach((button) => {
-      if (button.style.background != "black") {
-        A_0.push(0);  // White pixel = 0
-      } else {
-        A_0.push(1);  // Black pixel = 1
-      }
-    });
-
-    // Forward propagation through the network
-    A_1 = forward_propogation(A_0, W_1, B_1, "TanH");  // Input -> Hidden 1
-    A_2 = forward_propogation(A_1, W_2, B_2, "TanH");  // Hidden 1 -> Hidden 2
-    A_3 = forward_propogation(A_2, W_3, B_3, "TanH");  // Hidden 2 -> Output
-
-    console.log(softmax(A_3));
-
-    // Find and display the predicted digit (highest probability)
-    let softmax_output = softmax(A_3);
-    for (let j = 0; j < softmax_output.length; j++) {
-      if (softmax_output[j] == Math.max.apply(null, softmax_output)) {
-        output_text.innerHTML = "The output is " + j;
-      }
-    }
-
-    // Display all digits with their confidence percentages (sorted by probability)
-    let percentageoutput = convertToPercentages(softmax(A_3));
-    let percentageoutput_index = percentageoutput.map((item) => item.index);
-    let percentageoutput_percent = percentageoutput.map(
-      (item) => item.percentage
-    );
-    for (let u = 0; u < percentageoutput.length; u++) {
-      output_text.innerHTML +=
-        "<br>" + percentageoutput_index[u] + "=" + percentageoutput_percent[u];
-    }
-
-    // Reset activation arrays for next iteration
-    A_0 = [];
-    A_1 = [];
-    A_2 = [];
-    A_3 = [];
-  }, 100);  // Update every 100ms
+  // Stop any previous prediction interval
+  if (newinterval) {
+    clearInterval(newinterval);
+    newinterval = null;
+  }
   
-  // Clear the drawing grid when starting recognition
-  button.forEach((button) => {
-    button.style.background = `white`;
+  // Convert the pixel grid to input array (0 = white, 1 = black)
+  button.forEach((btn) => {
+    if (btn.style.background != "black") {
+      A_0.push(0);  // White pixel = 0
+    } else {
+      A_0.push(1);  // Black pixel = 1
+    }
   });
+
+  // Forward propagation through the network
+  A_1 = forward_propogation(A_0, W_1, B_1, "TanH");  // Input -> Hidden 1
+  A_2 = forward_propogation(A_1, W_2, B_2, "TanH");  // Hidden 1 -> Hidden 2
+  A_3 = forward_propogation(A_2, W_3, B_3, "TanH");  // Hidden 2 -> Output
+
+  // Apply softmax to get probability distribution
+  const softmax_output = softmax(A_3);
+  console.log(softmax_output);
+
+  // Find and display the predicted digit (highest probability)
+  const maxProb = Math.max(...softmax_output);
+  const predictedDigit = softmax_output.indexOf(maxProb);
+  output_text.innerHTML = `<strong>Predicted: ${predictedDigit}</strong>`;
+
+  // Display all digits with their confidence percentages (sorted by probability)
+  const percentageOutput = convertToPercentages(softmax_output);
+  for (const item of percentageOutput) {
+    const percent = item.percentage.toFixed(2);
+    output_text.innerHTML += `<br>${item.index} = ${percent}%`;
+  }
+
+  // Reset activation arrays for next prediction
+  A_0 = [];
+  A_1 = [];
+  A_2 = [];
+  A_3 = [];
 }
 
 
@@ -626,242 +656,284 @@ function neural_network_main() {
  * ============================================================================= */
 
 /**
- * Adds random noise to a binary image array
- * Randomly flips white pixels (0) to black (1) based on bias factor
+ * Adds random noise to a binary image
  * 
- * @param {Array} inputarray - Flattened binary pixel array
- * @param {number} width - Image width (pixels)
- * @param {number} height - Image height (pixels)
- * @param {number} biasFactor - Probability of keeping a white pixel white (0-1)
- *                              Higher values = less noise added
- * @returns {Array} Noised image array
+ * Randomly converts white pixels (0) to black (1) based on probability.
+ * Black pixels remain unchanged (preserves the drawn digit).
+ * 
+ * @param {number[]} image - Flattened binary pixel array
+ * @param {number} width - Image width in pixels
+ * @param {number} height - Image height in pixels  
+ * @param {number} keepWhiteProb - Probability of keeping white pixel white (0-1)
+ *                                 0.99 = 1% chance of noise per white pixel
+ * @returns {number[]} Image with random noise added
+ * 
+ * @example
+ * noisefunction(image, 20, 20, 0.99)  // 1% noise probability
  */
-function noisefunction(inputarray, width, height, biasFactor) {
-  let noisedarray = [];
-
-  for (let noise_loop = 0; noise_loop < width*height; noise_loop++) {
-    if (inputarray[noise_loop] === 0) {
-      // For white pixels: randomly decide to keep white or flip to black
-      noisedarray.push(Math.random() < biasFactor ? 0 : 1);
-    }
-    else {
-      // Keep black pixels unchanged
-      noisedarray.push(1);
-    }
-  }
-
-  return noisedarray;
+function noisefunction(image, width, height, keepWhiteProb) {
+    return image.map(pixel => {
+        if (pixel === 0) {
+            // White pixel: randomly flip to black based on probability
+            return Math.random() < keepWhiteProb ? 0 : 1;
+        }
+        // Black pixel: keep unchanged
+        return 1;
+    });
 }
 
 /**
- * Translates (shifts) an image by dx and dy pixels
- * Pixels that shift outside the boundary are replaced with 0 (white)
+ * Translates (shifts) an image by specified pixel amounts
  * 
- * @param {Array} inputarray - Flattened pixel array
+ * Shifts all pixels by (dx, dy). Pixels that move outside the
+ * image boundary are replaced with 0 (white/background).
+ * 
+ * @param {number[]} image - Flattened pixel array
  * @param {number} height - Image height
  * @param {number} width - Image width
- * @param {number} dxv - Horizontal shift (positive = right, negative = left)
- * @param {number} dyv - Vertical shift (positive = down, negative = up)
- * @returns {Array} Translated image as flattened array
+ * @param {number} dx - Horizontal shift (+ = right, - = left)
+ * @param {number} dy - Vertical shift (+ = down, - = up)
+ * @returns {number[]} Translated image as flattened array
+ * 
+ * @example
+ * position(image, 20, 20, 2, -1)  // Shift right 2px, up 1px
  */
-function position(inputarray, height, width, dxv, dyv) {
-  // Convert flattened array to 2D grid
-  const originalArray = Array.from({ length: height }, (_, i) => inputarray.slice(i * width, (i + 1) * width));
-  const dx = dxv;
-  const dy = dyv;
-  
-  const rows = originalArray.length;
-  const columns = originalArray[0].length;
-
-  const translatedArray = [];
-
-  // Apply translation transformation to each pixel
-  for (let i = 0; i < rows; i++) {
-    translatedArray[i] = [];
-    for (let j = 0; j < columns; j++) {
-      const originalX = j;
-      const originalY = i;
-      const translatedX = originalX + dx;  // New X position after shift
-      const translatedY = originalY + dy;  // New Y position after shift
-      
-      // Check if the source position is within bounds
-      if (translatedX >= 0 && translatedX < columns && translatedY >= 0 && translatedY < rows) {
-        translatedArray[i][j] = originalArray[translatedY][translatedX];
-      } 
-      else {
-        // Fill out-of-bounds pixels with white (0)
-        translatedArray[i][j] = 0;
-      }
+function position(image, height, width, dx, dy) {
+    // Convert flat array to 2D grid for easier manipulation
+    const grid = [];
+    for (let row = 0; row < height; row++) {
+        grid.push(image.slice(row * width, (row + 1) * width));
     }
-  }
-  return translatedArray.flat();  // Return as flattened 1D array
+    
+    // Create translated output grid
+    const translated = [];
+    
+    for (let y = 0; y < height; y++) {
+        translated[y] = [];
+        for (let x = 0; x < width; x++) {
+            // Calculate source coordinates
+            const srcX = x + dx;
+            const srcY = y + dy;
+            
+            // Check bounds and copy pixel or fill with white
+            if (srcX >= 0 && srcX < width && srcY >= 0 && srcY < height) {
+                translated[y][x] = grid[srcY][srcX];
+            } else {
+                translated[y][x] = 0;  // Out of bounds = white
+            }
+        }
+    }
+    
+    return translated.flat();
 }
 
 /**
- * Rotates an image around its center by a specified angle
- * Uses 2D rotation matrix transformation
+ * Rotates an image around its center
  * 
- * @param {Array} inputarray - Flattened pixel array
- * @param {number} anglevalue - Rotation angle in degrees
+ * Uses 2D rotation matrix transformation:
+ *   [x']   [cosθ  -sinθ] [x - cx]   [cx]
+ *   [y'] = [sinθ   cosθ] [y - cy] + [cy]
+ * 
+ * @param {number[]} image - Flattened pixel array
+ * @param {number} angleDegrees - Rotation angle in degrees (+ = counterclockwise)
  * @param {number} height - Image height
- * @param {number} width - Image width  
- * @returns {Array} Rotated image as flattened array
+ * @param {number} width - Image width
+ * @returns {number[]} Rotated image as flattened array
+ * 
+ * @example
+ * rotation(image, 15, 20, 20)   // Rotate 15° counterclockwise
+ * rotation(image, -10, 20, 20)  // Rotate 10° clockwise
  */
-function rotation(inputarray, anglevalue, height, width) {
-  // Convert degrees to radians for Math functions
-  let angle = (anglevalue * Math.PI) / 180;
-  
-  // Calculate center point for rotation pivot
-  const centerX = width / 2;
-  const centerY = height / 2;
-
-  const rotatedarray = [];
-
-  // Apply rotation transformation to each pixel
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      // Calculate position relative to center
-      const relX = x - centerX;
-      const relY = y - centerY;
-        
-      // Apply 2D rotation matrix: [cosθ -sinθ] [x]
-      //                           [sinθ  cosθ] [y]
-      const newX = Math.round(relX * Math.cos(angle) - relY * Math.sin(angle));
-      const newY = Math.round(relX * Math.sin(angle) + relY * Math.cos(angle));
-
-      // Convert back to absolute coordinates
-      const absX = Math.floor(newX + centerX);
-      const absY = Math.floor(newY + centerY);
-  
-      // Get the pixel value from the source position
-      const pixel = inputarray[absY * width + absX];
-  
-      // Assign to the rotated position
-      rotatedarray[y * width + x] = pixel;
+function rotation(image, angleDegrees, height, width) {
+    // Convert degrees to radians
+    const angleRad = (angleDegrees * Math.PI) / 180;
+    const cos = Math.cos(angleRad);
+    const sin = Math.sin(angleRad);
+    
+    // Calculate center point (rotation pivot)
+    const centerX = width / 2;
+    const centerY = height / 2;
+    
+    const rotated = new Array(width * height);
+    
+    // For each output pixel, find the corresponding source pixel
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            // Translate to origin (center)
+            const relX = x - centerX;
+            const relY = y - centerY;
+            
+            // Apply inverse rotation to find source coordinates
+            // (we're mapping destination to source)
+            const srcX = Math.round(relX * cos - relY * sin + centerX);
+            const srcY = Math.round(relX * sin + relY * cos + centerY);
+            
+            // Sample from source or use background (0)
+            if (srcX >= 0 && srcX < width && srcY >= 0 && srcY < height) {
+                rotated[y * width + x] = image[srcY * width + srcX];
+            } else {
+                rotated[y * width + x] = 0;  // Background
+            }
+        }
     }
-  }
-  
-  return rotatedarray;
+    
+    return rotated;
 }
 
 /**
- * Generates a random integer between min and max (inclusive)
- * 
- * @param {number} min - Minimum value
- * @param {number} max - Maximum value
- * @returns {number} Random integer in range [min, max]
+ * @deprecated Use randomrangenumber() from maths.js instead
+ * Kept for backward compatibility
  */
-function randomrangenumber(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
 
 /**
  * Applies random data augmentation to training data
- * Augmentations include: translation, noise, and rotation
- * This helps the model generalize better by seeing varied versions of training examples
  * 
- * @param {Object} originaldata - Training data object to be modified
- * @param {Object} copydata - Original copy of training data for reference
+ * Augmentation Pipeline:
+ *   1. Random translation: ±4 pixels in x and y
+ *   2. Random noise: 1% probability per white pixel
+ *   3. Random rotation: ±15 degrees
+ *   4. Cleanup: Replace undefined values with 0
+ * 
+ * This helps the model generalize better by seeing varied
+ * versions of the training examples.
+ * 
+ * @param {Object} targetData - Training data object to modify
+ * @param {Object} sourceData - Original training data (reference)
  */
-function randomnessadder(originaldata, copydata) {
-  for (const key in copydata) {
-    // Step 1: Random translation (-4 to +4 pixels in each direction)
-    let noisedarray1 = position(copydata[key][0], 20, 20, randomrangenumber(-4, 4), randomrangenumber(-4, 4));
+function randomnessadder(targetData, sourceData) {
+    const gridSize = NETWORK_CONFIG.GRID_WIDTH;
     
-    // Step 2: Add random noise (99% chance to keep white pixels white)
-    let noisedarray2 = noisefunction(noisedarray1, 20, 20, 0.99);
-    
-    // Step 3: Random rotation (-15 to +15 degrees)
-    let noisedarray3 = rotation(noisedarray2, randomrangenumber(-15, 15), 20, 20);
-    
-    // Step 4: Replace null/undefined values with 0 (cleanup)
-    let noisedarray4 = noisedarray3.map((value) => {
-      if (value === null || value === undefined) {
-        return 0;
-      } else {
-        return value;
-      }
-    });
-    
-    // Update the training data with augmented version
-    originaldata[key][0] = noisedarray4;
-  }
+    for (const key in sourceData) {
+        let augmented = sourceData[key][0];
+        
+        // Step 1: Random translation (±4 pixels)
+        const dx = randomrangenumber(-4, 4);
+        const dy = randomrangenumber(-4, 4);
+        augmented = position(augmented, gridSize, gridSize, dx, dy);
+        
+        // Step 2: Add random noise (1% probability)
+        augmented = noisefunction(augmented, gridSize, gridSize, 0.99);
+        
+        // Step 3: Random rotation (±15 degrees)
+        const angle = randomrangenumber(-15, 15);
+        augmented = rotation(augmented, angle, gridSize, gridSize);
+        
+        // Step 4: Cleanup - replace null/undefined with 0
+        augmented = augmented.map(val => (val == null) ? 0 : val);
+        
+        // Update training data with augmented version
+        targetData[key][0] = augmented;
+    }
 }
 
-/** Deep copy of original training data (used as reference for augmentation) */
-const neuralnetworkdatacopy = JSON.parse(JSON.stringify(Neural_Network_Train_Data));;
+/** Deep copy of training data (reference for augmentation) */
+const neuralnetworkdatacopy = JSON.parse(JSON.stringify(Neural_Network_Train_Data));
 
 /* =============================================================================
- * TRAINING LOOP & UI CONTROLS
+ * TRAINING CONFIGURATION & UI CONTROLS
  * ============================================================================= */
 
-/** Number of training iterations to perform */
-let training_length = 20;
+/**
+ * Training Configuration
+ */
+let training_length = 20;           // Number of training iterations
+let loadpercent = 0;                // Progress bar percentage
+let useDataAugmentation = true;     // Enable/disable data augmentation
+let train_interval = null;          // Reference to training interval
 
-/** Current progress percentage for the loading bar */
-let loadpercent = 0;
-
-/** Flag to enable/disable data augmentation during training */
-let useDataAugmentation = true;
-
-// Initialize loading bar width
-loadbar.style.width = "calc(90%/" + training_length + "*" + loadpercent + ")";
-
-/** Reference to training interval (if using async training) */
-let train_interval = null;
+// Initialize loading bar
+loadbar.style.width = `calc(90% / ${training_length} * ${loadpercent})`;
 
 /**
- * Initiates the training process when user clicks "Train the neural network" button
- * Runs multiple training iterations with optional data augmentation
- * Displays progress via loading bar
+ * Main Training Function
+ * 
+ * Executes the training loop:
+ *   1. Optionally augment training data
+ *   2. Forward propagation (compute predictions)
+ *   3. Backpropagation (compute gradients)
+ *   4. Parameter update (gradient descent)
+ *   5. Reset gradients for next iteration
+ * 
+ * Updates the progress bar and displays metrics during training.
+ * Uses async iteration to prevent UI blocking.
  */
+let isTraining = false;  // Prevent multiple simultaneous training sessions
+
 function train_button() {
-  // Show the loading bar
-  loadbarcontain.style.display = "flex";
-  
-  // Training loop - run for specified number of iterations
-  for (let trainingloop = 0; trainingloop < training_length; trainingloop++) {
-    // Apply random augmentation to training data if enabled
-    if (useDataAugmentation) {
-      randomnessadder(Neural_Network_Train_Data, neuralnetworkdatacopy);
+    // Prevent starting new training while already training
+    if (isTraining) {
+        console.log("Training already in progress...");
+        return;
     }
     
-    // Run one training iteration (forward prop + backprop + parameter update)
-    train_neural_network();
+    isTraining = true;
+    loadpercent = 0;
     
-    // Reset gradient arrays for next iteration
-    // (Gradients must be cleared between training iterations)
-    dZ3 = [];
-    dW3 = [];
-    dB3 = [];
-    dZ2 = null;
-    dW2 = [];
-    dB2 = [];
-    dZ1 = null;
-    dW1 = [];
-    dB1 = [];
+    // Show progress bar
+    loadbarcontain.style.display = "flex";
+    loadbar.style.width = "0%";
     
-    // Update progress bar
-    loadpercent++;
-    loadbar.style.width = "calc(90%/" + training_length + "*" + loadpercent + ")";
-    
-    // Hide loading bar when training is complete
-    if (training_length == loadpercent) {
-      loadbarcontain.style.display = "none";
-      loadpercent = 0;
+    /**
+     * Async training iteration
+     * Uses setTimeout to yield control back to browser for UI updates
+     */
+    function trainIteration(epoch) {
+        if (epoch >= training_length) {
+            // Training complete
+            loadbarcontain.style.display = "none";
+            loadpercent = 0;
+            isTraining = false;
+            console.log("Training complete!");
+            return;
+        }
+        
+        // Step 1: Apply data augmentation if enabled
+        if (useDataAugmentation) {
+            randomnessadder(Neural_Network_Train_Data, neuralnetworkdatacopy);
+        }
+        
+        // Step 2-4: Forward prop, backprop, and parameter update
+        train_neural_network();
+        
+        // Step 5: Reset gradients for next iteration
+        // (Critical: gradients accumulate and must be cleared)
+        dZ3 = [];
+        dW3 = [];
+        dB3 = [];
+        dZ2 = null;
+        dW2 = [];
+        dB2 = [];
+        dZ1 = null;
+        dW1 = [];
+        dB1 = [];
+        
+        // Update progress bar
+        loadpercent = epoch + 1;
+        const progressPercent = (loadpercent / training_length) * 90;
+        loadbar.style.width = `${progressPercent}%`;
+        
+        // Schedule next iteration (setTimeout allows browser to repaint)
+        setTimeout(() => trainIteration(epoch + 1), 0);
     }
-  }
+    
+    // Start training
+    trainIteration(0);
 }
 
 /**
- * Event listener for hyperparameter update button
- * Allows users to modify training parameters without reloading the page
- * Updates: learning rate (alpha), regularization (lambda), and training iterations
+ * Hyperparameter Update Handler
+ * 
+ * Allows users to modify training parameters without reloading:
+ *   - Learning rate (α): Controls gradient descent step size
+ *   - Regularization (λ): L2 penalty coefficient  
+ *   - Training iterations: Number of epochs per train button click
  */
 alpha_submit.addEventListener("click", () => {
-  alpha = parseFloat(alpha_value.value);  // Update learning rate
-  lambda = parseFloat(document.getElementById("lambda_value").value);  // Update regularization
-  training_length = parseFloat(train_length_input.value);  // Update number of training iterations
+    alpha = parseFloat(alpha_value.value) || 0.1;
+    lambda = parseFloat(document.getElementById("lambda_value").value) || 0.000001;
+    training_length = parseInt(train_length_input.value, 10) || 20;
+    
+    console.log(`Hyperparameters updated: α=${alpha}, λ=${lambda}, iterations=${training_length}`);
 });
 
 /**

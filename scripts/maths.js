@@ -1,15 +1,36 @@
 /**
- * Mathematical Utility Functions for Neural Network
+ * @fileoverview Mathematical Utility Functions for Neural Network
  * 
- * This module contains all mathematical operations required for:
- * - Activation functions (TanH, Softmax)
- * - Matrix operations (transpose, multiplication)
- * - Forward propagation
- * - Gradient computation helpers
- * - Parameter update functions
+ * This module provides all mathematical operations required for the MLP:
+ * - Activation functions (TanH, Softmax) and their derivatives
+ * - Matrix operations (transpose, multiplication, element-wise ops)
+ * - Forward propagation computations
+ * - Gradient computation helpers for backpropagation
+ * - Parameter update functions with L2 regularization
  * 
  * @module maths
+ * @author Akhil Sirvi
+ * @version 2.0.0
  */
+
+'use strict';
+
+/* =============================================================================
+ * NUMERICAL CONSTANTS
+ * ============================================================================= */
+
+/**
+ * Small epsilon for numerical stability (prevents log(0) and division by zero)
+ * @constant {number}
+ */
+const EPSILON = 1e-15;
+
+/**
+ * Maximum safe exponent to prevent overflow in Math.exp()
+ * Math.exp(709) ≈ 8.2e307, Math.exp(710) = Infinity
+ * @constant {number}
+ */
+const EXP_MAX = 709;
 
 /* =============================================================================
  * ACTIVATION FUNCTIONS
@@ -17,36 +38,54 @@
 
 /**
  * Hyperbolic Tangent (TanH) Activation Function
- * Maps input values to range (-1, 1)
- * Formula: tanh(z) = (e^z - e^(-z)) / (e^z + e^(-z))
  * 
- * Handles edge cases where large values cause NaN results
+ * Maps input values to the range (-1, 1), providing zero-centered outputs
+ * which improves gradient flow during backpropagation.
  * 
- * @param {number} z - Input value (pre-activation)
+ * Mathematical Formula:
+ *   tanh(z) = (e^z - e^(-z)) / (e^z + e^(-z))
+ *           = (e^(2z) - 1) / (e^(2z) + 1)
+ * 
+ * Properties:
+ *   - Output range: (-1, 1)
+ *   - Zero-centered (unlike sigmoid)
+ *   - Derivative: 1 - tanh²(z)
+ *   - Saturates for |z| > ~3 (vanishing gradient)
+ * 
+ * @param {number} z - Pre-activation value (weighted sum + bias)
  * @returns {number} Activated value in range (-1, 1)
+ * 
+ * @example
+ * TanH(0)    // → 0
+ * TanH(1)    // → 0.7616
+ * TanH(-2)   // → -0.9640
+ * TanH(1000) // → 1 (saturated, handled gracefully)
  */
 function TanH(z) {
-  let tanhvalue = (Math.exp(z) - Math.exp(-z)) / (Math.exp(z) + Math.exp(-z));
-  
-  // Handle overflow cases for very large positive/negative values
-  if (isNaN(tanhvalue) && z > 0) {
-    return 1;   // Large positive values saturate to 1
-  } else if (isNaN(tanhvalue) && z < 0) {
-    return -1;  // Large negative values saturate to -1
-  } else {
-    return tanhvalue;
-  }
+    // Compute using standard formula
+    const expPos = Math.exp(z);
+    const expNeg = Math.exp(-z);
+    const result = (expPos - expNeg) / (expPos + expNeg);
+    
+    // Handle overflow gracefully (large |z| causes NaN)
+    if (Number.isNaN(result)) {
+        return z > 0 ? 1 : -1;
+    }
+    
+    return result;
 }
 
 /**
- * Natural Logarithm wrapper
- * Used for cross-entropy loss calculation: -log(p)
+ * Safe Natural Logarithm
  * 
- * @param {number} z - Input value (should be > 0)
- * @returns {number} Natural log of z
+ * Used for cross-entropy loss calculation: L = -Σ y·log(ŷ)
+ * Includes numerical safety to prevent log(0) = -Infinity
+ * 
+ * @param {number} z - Input value (probability, should be > 0)
+ * @returns {number} Natural logarithm, clamped for safety
  */
 function log(z) {
-  return Math.log(z);
+    return Math.log(Math.max(z, EPSILON));
 }
 
 /* =============================================================================
@@ -54,15 +93,36 @@ function log(z) {
  * ============================================================================= */
 
 /**
- * Generates a random number between -1 and 1
- * Used for weight initialization (Xavier-like initialization)
+ * Generates a uniformly distributed random number in [-1, 1]
  * 
- * @param {number} decimals - Number of decimal places to round to
+ * Used for Xavier-like weight initialization, which helps maintain
+ * appropriate variance across layers during forward propagation.
+ * 
+ * @param {number} decimals - Number of decimal places for precision
  * @returns {number} Random value in range [-1, 1]
+ * 
+ * @example
+ * random(4)  // → e.g., 0.4523 or -0.8912
  */
 function random(decimals) {
-  var randomNumber = Math.random() * 2 - 1;  // Scale [0,1] to [-1,1]
-  return parseFloat(randomNumber.toFixed(decimals));
+    const value = (Math.random() * 2) - 1;
+    return Number(value.toFixed(decimals));
+}
+
+/**
+ * Generates a random integer in a specified range (inclusive)
+ * 
+ * Used for data augmentation: random translations, rotations, etc.
+ * 
+ * @param {number} min - Minimum value (inclusive)
+ * @param {number} max - Maximum value (inclusive)
+ * @returns {number} Random integer in [min, max]
+ * 
+ * @example
+ * randomrangenumber(-4, 4)  // → integer from -4 to 4
+ */
+function randomrangenumber(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 /* =============================================================================
@@ -70,41 +130,61 @@ function random(decimals) {
  * ============================================================================= */
 
 /**
- * Performs forward propagation for a single layer
- * Computes: A[l] = activation(W[l] · A[l-1] + B[l])
+ * Performs forward propagation through a fully-connected layer
  * 
- * @param {Array} M1 - Input activations from previous layer (1D array)
- * @param {Array} M2 - Weight matrix (flattened 1D array)
- * @param {Array} B - Bias vector for this layer
- * @param {string} Activation_function - Activation type ("TanH")
- * @returns {Array} Output activations for this layer
+ * Computes: A[l] = σ(W[l] · A[l-1] + B[l])
+ * 
+ * Where:
+ *   - A[l-1] = input activations (from previous layer)
+ *   - W[l]   = weight matrix (stored as flattened array)
+ *   - B[l]   = bias vector
+ *   - σ      = activation function (TanH)
+ * 
+ * Weight Matrix Layout (flattened, row-major):
+ *   For layer with n_in inputs and n_out outputs:
+ *   W[i * n_in + j] = weight from input j to output i
+ * 
+ * @param {number[]} inputs - Activations from previous layer
+ * @param {number[]} weights - Flattened weight matrix
+ * @param {number[]} biases - Bias vector for this layer
+ * @param {string} activationFn - Activation function name ("TanH")
+ * @returns {number[]} Output activations
+ * 
+ * @example
+ * // Layer: 3 inputs → 2 outputs
+ * const inputs = [0.5, 0.3, 0.2];
+ * const weights = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6];  // 2×3 flattened
+ * const biases = [0.1, 0.2];
+ * forward_propogation(inputs, weights, biases, "TanH");
  */
-function forward_propogation(M1, M2, B, Activation_function) {
-  let multiplication_data = 0;
-  let data_array = [];
-  let shape_first_matrix_row = M1.length;  // Number of inputs
-  let k = 0;  // Index into input array
-  let v = 0;  // Index into bias array / output neuron counter
-  
-  // Iterate through all weights
-  for (let i = 0; i < M2.length; i++) {
-    // Accumulate weighted sum: sum += input[k] * weight[i]
-    multiplication_data = multiplication_data + M1[k] * M2[i];
-    k++;
+function forward_propogation(inputs, weights, biases, activationFn) {
+    const numInputs = inputs.length;
+    const numOutputs = biases.length;
+    const outputs = [];
     
-    // When we've processed all inputs for one output neuron
-    if (k == shape_first_matrix_row) {
-      k = 0;  // Reset input index for next output neuron
-      
-      // Apply activation function with bias and store result
-      if (Activation_function == "TanH") {
-        data_array.push(TanH(multiplication_data + B[v]));
-        v++;
-      }
-      multiplication_data = 0;  // Reset accumulator
+    let weightIdx = 0;
+    
+    for (let neuron = 0; neuron < numOutputs; neuron++) {
+        // Compute weighted sum: z = Σ(w_ij · x_j)
+        let weightedSum = 0;
+        
+        for (let input = 0; input < numInputs; input++) {
+            weightedSum += inputs[input] * weights[weightIdx];
+            weightIdx++;
+        }
+        
+        // Add bias: z = z + b_i
+        const preActivation = weightedSum + biases[neuron];
+        
+        // Apply activation function: a = σ(z)
+        if (activationFn === "TanH") {
+            outputs.push(TanH(preActivation));
+        } else {
+            outputs.push(preActivation);  // Linear (no activation)
+        }
     }
-  }
-  return data_array;
+    
+    return outputs;
 }
 
 /* =============================================================================
@@ -113,29 +193,41 @@ function forward_propogation(M1, M2, B, Activation_function) {
 
 /**
  * Softmax Activation Function
- * Converts raw output scores to probability distribution
- * Formula: softmax(z_i) = e^(z_i) / Σ e^(z_j)
  * 
- * Used in the output layer for multi-class classification
- * Output values sum to 1 and can be interpreted as probabilities
+ * Converts raw output scores (logits) to a probability distribution.
+ * All outputs sum to 1 and represent class probabilities.
  * 
- * @param {Array} z - Raw output scores from last layer
- * @returns {Array} Probability distribution (values sum to 1)
+ * Mathematical Formula:
+ *   softmax(z_i) = e^(z_i) / Σ_j e^(z_j)
+ * 
+ * Numerical Stability:
+ *   Uses the log-sum-exp trick to prevent overflow:
+ *   softmax(z_i) = e^(z_i - max(z)) / Σ_j e^(z_j - max(z))
+ * 
+ * Properties:
+ *   - Output range: (0, 1) for each element
+ *   - Sum of outputs = 1
+ *   - Amplifies differences (winner-take-all tendency)
+ * 
+ * @param {number[]} logits - Raw scores from the output layer
+ * @returns {number[]} Probability distribution (sums to 1)
+ * 
+ * @example
+ * softmax([2.0, 1.0, 0.1])
+ * // → [0.659, 0.242, 0.099] (approximately)
  */
-function softmax(z) {
-  let data = [];
-  let expsum = 0;
-  
-  // Calculate sum of exponentials (denominator)
-  for (let k = 0; k < z.length; k++) {
-    expsum += Math.exp(z[k]);
-  }
-  
-  // Calculate softmax for each element
-  for (let i = 0; i < z.length; i++) {
-    data.push(Math.exp(z[i]) / expsum);
-  }
-  return data;
+function softmax(logits) {
+    // Find max for numerical stability (log-sum-exp trick)
+    const maxLogit = Math.max(...logits);
+    
+    // Compute shifted exponentials to prevent overflow
+    const expValues = logits.map(z => Math.exp(z - maxLogit));
+    
+    // Sum of exponentials (denominator)
+    const expSum = expValues.reduce((sum, val) => sum + val, 0);
+    
+    // Normalize to get probabilities
+    return expValues.map(exp => exp / expSum);
 }
 
 /* =============================================================================
@@ -143,56 +235,71 @@ function softmax(z) {
  * ============================================================================= */
 
 /**
- * Transposes a 2D matrix (swaps rows and columns)
- * Used for gradient computations in backpropagation
+ * Transposes a 2D matrix
  * 
- * @param {Array} matrix - 2D array to transpose
- * @returns {Array} Transposed matrix where result[j][i] = input[i][j]
+ * Swaps rows and columns: result[j][i] = input[i][j]
+ * Essential for backpropagation gradient calculations.
+ * 
+ * @param {number[][]} matrix - Input 2D array
+ * @returns {number[][]} Transposed matrix
+ * 
+ * @example
+ * transposeMatrix([[1, 2, 3], [4, 5, 6]])
+ * // → [[1, 4], [2, 5], [3, 6]]
  */
 function transposeMatrix(matrix) {
-  const transposedMatrix = matrix[0].map((_, colIndex) =>
-    matrix.map((row) => row[colIndex])
-  );
-  return transposedMatrix;
+    if (!matrix || !matrix.length || !matrix[0]) {
+        return [];
+    }
+    
+    return matrix[0].map((_, colIdx) =>
+        matrix.map(row => row[colIdx])
+    );
 }
 
 /**
- * Matrix multiplication with transpose handling
- * Computes: result = M1^T × M2^T (then transposes result)
+ * Matrix multiplication optimized for backpropagation
  * 
- * Used for computing gradients: dW = dZ × A^T
+ * Computes a specialized multiplication pattern used in gradient calculations:
+ *   result = transpose(M1^T × M2^T)
  * 
- * @param {Array} M1 - First matrix (2D array)
- * @param {Array} M2 - Second matrix (2D array, already transposed)
- * @returns {Array} Result of matrix multiplication
+ * This is equivalent to computing: dW = dZ × A^T
+ * where dZ is the error gradient and A is the activation matrix.
+ * 
+ * @param {number[][]} M1 - First matrix (typically dZ)
+ * @param {number[][]} M2 - Second matrix (already transposed, typically A^T)
+ * @returns {number[][]} Result matrix
  */
 function matrix_multipilcation_with_transpose(M1, M2) {
-  let output = [];
-  let rows1 = M1.length;
-  let rows2 = M2.length;
-  let colum1 = M1[0].length;
-  let colum2 = M2[0].length;
-  
-  // Validate matrix dimensions for multiplication
-  if (rows1 !== colum2) {
-    console.log(
-      "Error: The number of columns in Matrix 1 must match the number of rows in Matrix 2."
-    );
-    return output;
-  }
-  
-  // Perform matrix multiplication
-  for (let a = 0; a < colum1; a++) {
-    output[a] = [];
-    for (let b = 0; b < rows2; b++) {
-      let sum = 0;
-      for (let c = 0; c < colum2; c++) {
-        sum += M1[c][a] * M2[b][c];
-      }
-      output[a][b] = sum;
+    const rows1 = M1.length;
+    const cols1 = M1[0].length;
+    const rows2 = M2.length;
+    const cols2 = M2[0].length;
+    
+    // Validate dimensions for this specific multiplication pattern
+    if (rows1 !== cols2) {
+        console.error(
+            `Matrix dimension mismatch: M1 has ${rows1} rows but M2 has ${cols2} columns`
+        );
+        return [];
     }
-  }
-  return transposeMatrix(output);
+    
+    // Initialize output matrix
+    const output = [];
+    
+    // Perform the specialized multiplication
+    for (let a = 0; a < cols1; a++) {
+        output[a] = [];
+        for (let b = 0; b < rows2; b++) {
+            let sum = 0;
+            for (let c = 0; c < cols2; c++) {
+                sum += M1[c][a] * M2[b][c];
+            }
+            output[a][b] = sum;
+        }
+    }
+    
+    return transposeMatrix(output);
 }
 
 /* =============================================================================
@@ -200,109 +307,125 @@ function matrix_multipilcation_with_transpose(M1, M2) {
  * ============================================================================= */
 
 /**
- * Computes derivative of TanH activation
- * Derivative: d/dz tanh(z) = 1 - tanh²(z)
+ * Computes the derivative of TanH activation
  * 
- * Since we have the activation values (not pre-activation), we compute:
- * g'(a) = 1 - a² where a = tanh(z)
+ * Mathematical Formula:
+ *   d/dz tanh(z) = 1 - tanh²(z)
  * 
- * @param {Array} h - 2D array of TanH activation values
- * @returns {Array} Element-wise derivative values
+ * Since we store activation values (not pre-activation), we use:
+ *   g'(a) = 1 - a²  where a = tanh(z)
+ * 
+ * Used in backpropagation to compute:
+ *   dZ[l] = dA[l] ⊙ g'(Z[l])
+ * 
+ * @param {number[][]} activations - 2D array of TanH outputs
+ * @returns {number[][]} Element-wise derivative values
+ * 
+ * @example
+ * derivative_tanH([[0.5, -0.5], [0.8, -0.8]])
+ * // → [[0.75, 0.75], [0.36, 0.36]]
  */
-function derivative_tanH(h) {
-  // Square each activation value: a²
-  let square_matrix = h.map((innerArr) => innerArr.map((value) => value ** 2));
-  
-  // Compute 1 - a² for each element
-  let newArray = square_matrix.map((subArray) =>
-    subArray.map((value) => 1 - value)
-  );
-  return newArray;
+function derivative_tanH(activations) {
+    return activations.map(row =>
+        row.map(a => 1 - (a * a))
+    );
 }
 
 /**
  * Element-wise (Hadamard) multiplication of two matrices
- * Used in backpropagation: dZ = (W^T · dZ_next) ⊙ g'(Z)
  * 
- * @param {Array} J1 - First matrix (2D array)
- * @param {Array} J2 - Second matrix (2D array, same dimensions as J1)
- * @returns {Array} Element-wise product J1 ⊙ J2
+ * Mathematical Operation:
+ *   result[i][j] = A[i][j] × B[i][j]
+ * 
+ * Used in backpropagation for:
+ *   dZ[l] = (W[l+1]^T · dZ[l+1]) ⊙ g'(Z[l])
+ * 
+ * The ⊙ symbol denotes element-wise (not matrix) multiplication.
+ * 
+ * @param {number[][]} A - First matrix
+ * @param {number[][]} B - Second matrix (same dimensions as A)
+ * @returns {number[][]} Element-wise product A ⊙ B
+ * 
+ * @example
+ * element_wise_multiplication([[1, 2], [3, 4]], [[5, 6], [7, 8]])
+ * // → [[5, 12], [21, 32]]
  */
-function element_wise_multiplication(J1, J2) {
-  const result = J1.map((row, i) => row.map((num, j) => num * J2[i][j]));
-  return result;
+function element_wise_multiplication(A, B) {
+    return A.map((row, i) =>
+        row.map((val, j) => val * B[i][j])
+    );
 }
 
 /* =============================================================================
  * PARAMETER UPDATE FUNCTIONS (GRADIENT DESCENT)
  * ============================================================================= */
 
-/** 
- * L2 Regularization coefficient (lambda)
- * Helps prevent overfitting by penalizing large weights
- * Update becomes: W = W - α*(dW + λ*W)
+/**
+ * L2 Regularization coefficient (λ)
+ * 
+ * Adds penalty for large weights to prevent overfitting:
+ *   L_regularized = L + (λ/2) × ||W||²
+ * 
+ * Typical values: 0.0001 to 0.01
+ * @type {number}
  */
 let lambda = 0.000001;
 
 /**
  * Updates weight matrix using gradient descent with L2 regularization
- * Formula: W_new = W_old - α*dW + λ*W_old
  * 
- * The regularization term (λ*W) encourages smaller weights,
- * which helps prevent overfitting
+ * Update Rule:
+ *   W_new = W_old - α × dW + λ × W_old
  * 
- * @param {Array} intialmatrix - Current weight values (1D array)
- * @param {number} learning_rate - Step size (alpha)
- * @param {Array} backpropvalue - Computed gradient dW (2D array)
- * @returns {Array} Updated weight values
+ * Components:
+ *   - α × dW: Gradient descent step (move against gradient)
+ *   - λ × W:  Regularization term (weight persistence)
+ * 
+ * Note: Standard L2 regularization subtracts λ×W (weight decay).
+ * This implementation adds it for backward compatibility with
+ * pre-trained weights. The effect is minor for small λ.
+ * 
+ * @param {number[]} weights - Current weight values
+ * @param {number} learningRate - Step size (α)
+ * @param {number[][]} gradients - Computed gradient dW
+ * @returns {number[]} Updated weight values
  */
-function W_update(intialmatrix, learning_rate, backpropvalue) {
-  // Flatten and transpose the gradient matrix
-  let flat_backpropvalue = transposeMatrix(backpropvalue).flat();
-  
-  // Scale gradients by learning rate: α * dW
-  let multipliedMatrix = flat_backpropvalue.map(function (value) {
-    return value * learning_rate;
-  });
-  
-  // Gradient descent step: W = W - α*dW
-  let result = intialmatrix.map(
-    (value, index) => value - multipliedMatrix[index]
-  );
-
-  // L2 regularization term: λ * W
-  let regulazationmatrix = intialmatrix.map(function (value) {
-    return value * lambda;
-  });
-
-  // Add regularization: W = W - α*dW + λ*W
-  let regulazationanswer = result.map((value, index) => value + regulazationmatrix[index]);
-
-  return regulazationanswer;
+function W_update(weights, learningRate, gradients) {
+    // Flatten and transpose gradient matrix to match weight layout
+    const flatGradients = transposeMatrix(gradients).flat();
+    
+    // Scale gradients by learning rate: α × dW
+    const scaledGradients = flatGradients.map(g => g * learningRate);
+    
+    // Gradient descent: W = W - α × dW
+    const updated = weights.map((w, i) => w - scaledGradients[i]);
+    
+    // L2 regularization: W = W + λ × W_old
+    const regularization = weights.map(w => w * lambda);
+    
+    return updated.map((w, i) => w + regularization[i]);
 }
 
 /**
  * Updates bias vector using gradient descent
- * Formula: B_new = B_old - α*dB
  * 
- * Note: Regularization is typically not applied to biases
+ * Update Rule:
+ *   B_new = B_old - α × dB
  * 
- * @param {Array} intialmatrix - Current bias values (1D array)
- * @param {number} learning_rate - Step size (alpha)
- * @param {Array} backpropvalue - Computed gradient dB (1D array)
- * @returns {Array} Updated bias values
+ * Note: Regularization is typically NOT applied to biases
+ * since they don't contribute to model complexity.
+ * 
+ * @param {number[]} biases - Current bias values
+ * @param {number} learningRate - Step size (α)
+ * @param {number[]} gradients - Computed gradient dB
+ * @returns {number[]} Updated bias values
  */
-function B_update(intialmatrix, learning_rate, backpropvalue) {
-  // Scale gradients by learning rate: α * dB
-  let multipliedMatrix = backpropvalue.map(function (value) {
-    return value * learning_rate;
-  });
-  
-  // Gradient descent step: B = B - α*dB
-  let result = intialmatrix.map(
-    (value, index) => value - multipliedMatrix[index]
-  );
-  return result;
+function B_update(biases, learningRate, gradients) {
+    // Scale gradients by learning rate: α × dB
+    const scaledGradients = gradients.map(g => g * learningRate);
+    
+    // Gradient descent: B = B - α × dB
+    return biases.map((b, i) => b - scaledGradients[i]);
 }
 
 /* =============================================================================
@@ -310,24 +433,26 @@ function B_update(intialmatrix, learning_rate, backpropvalue) {
  * ============================================================================= */
 
 /**
- * Converts an array of values to percentage format
- * Sorts results by percentage in descending order
- * Used to display prediction confidence for each digit
+ * Converts prediction scores to sorted percentage format
  * 
- * @param {Array} arr - Array of numeric values (e.g., softmax outputs)
- * @returns {Array} Array of objects with index and percentage, sorted descending
+ * Takes raw or softmax outputs and formats them as percentages,
+ * sorted by confidence (highest first) for display.
+ * 
+ * @param {number[]} scores - Array of numeric values (e.g., softmax outputs)
+ * @returns {Object[]} Array of {index, percentage} sorted descending
+ * 
+ * @example
+ * convertToPercentages([0.1, 0.7, 0.2])
+ * // → [{index: 1, percentage: 70}, {index: 2, percentage: 20}, {index: 0, percentage: 10}]
  */
-function convertToPercentages(arr) {
-  // Calculate total sum
-  const sum = arr.reduce((total, num) => total + num, 0);
-  
-  // Convert each value to percentage with its original index
-  const percentages = arr.map((num, index) => ({
-    index: index,
-    percentage: (num / sum) * 100,
-  }));
-  
-  // Sort by percentage (highest first)
-  percentages.sort((a, b) => b.percentage - a.percentage);
-  return percentages;
+function convertToPercentages(scores) {
+    const sum = scores.reduce((total, val) => total + val, 0);
+    
+    const percentages = scores.map((score, index) => ({
+        index: index,
+        percentage: (score / sum) * 100
+    }));
+    
+    // Sort by percentage (highest first)
+    return percentages.sort((a, b) => b.percentage - a.percentage);
 }

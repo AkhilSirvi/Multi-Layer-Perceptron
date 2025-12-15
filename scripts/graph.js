@@ -1,35 +1,69 @@
 /**
- * Graph Visualization Module
+ * @fileoverview Graph Visualization Module for Training Metrics
  * 
- * This module handles the visualization of training metrics using Chart.js
- * Displays two metrics on a dual-axis line chart:
- * - Cost (Loss) on the left Y-axis - should decrease during training
- * - Accuracy (%) on the right Y-axis - should increase during training
+ * Provides real-time visualization of neural network training progress
+ * using Chart.js. Displays dual-axis charts with:
+ *   - Cost (Loss) on the left Y-axis - should decrease during training
+ *   - Accuracy (%) on the right Y-axis - should increase during training
  * 
- * Supports multiple visualization options:
- * - Scale types: Linear, Logarithmic
- * - Chart types: Line, Bar
- * - Fill toggle for area charts
+ * Features:
+ *   - Multiple scale types: Linear, Logarithmic
+ *   - Multiple chart types: Line, Bar
+ *   - Configurable fill/area display
+ *   - Real-time updates during training
  * 
  * @module graph
+ * @author Akhil Sirvi
+ * @version 2.0.0
+ * @requires Chart.js
  */
 
-/** Reference to the Chart.js instance (stored for cleanup/update purposes) */
-let chart;
+'use strict';
 
-/** Current graph configuration options */
+/* =============================================================================
+ * CHART CONFIGURATION
+ * ============================================================================= */
+
+/**
+ * Chart color scheme (matches the UI theme)
+ * @constant {Object}
+ */
+const CHART_COLORS = Object.freeze({
+    COST: {
+        border: '#6366f1',           // Indigo
+        background: 'rgba(99, 102, 241, 0.2)'
+    },
+    ACCURACY: {
+        border: '#10b981',           // Emerald
+        background: 'rgba(16, 185, 129, 0.2)'
+    },
+    TEXT: {
+        primary: '#f8fafc',          // Light text
+        muted: '#94a3b8'             // Muted text
+    },
+    GRID: 'rgba(255, 255, 255, 0.1)'
+});
+
+/** Chart.js instance reference (for cleanup/update) */
+let chart = null;
+
+/** Current graph configuration */
 let graphConfig = {
-    scaleType: 'linear',      // 'linear' or 'logarithmic'
-    chartType: 'line',        // 'line' or 'bar'
-    showFill: true,           // Whether to show area fill
+    scaleType: 'linear',      // 'linear' | 'logarithmic'
+    chartType: 'line',        // 'line' | 'bar'
+    showFill: true            // Area fill under lines
 };
 
-/** Stored data for re-rendering with different options */
+/** Stored metrics for re-rendering with different options */
 let storedGraphCost = [];
 let storedGraphAccuracies = [];
 
+/* =============================================================================
+ * GRAPH CONTROL FUNCTIONS
+ * ============================================================================= */
+
 /**
- * Sets the Y-axis scale type and regenerates the chart
+ * Sets the Y-axis scale type and re-renders the chart
  * @param {string} scaleType - 'linear' or 'logarithmic'
  */
 function setGraphScale(scaleType) {
@@ -40,14 +74,14 @@ function setGraphScale(scaleType) {
         btn.classList.toggle('active', btn.dataset.scale === scaleType);
     });
     
-    // Regenerate chart with new scale
+    // Re-render if data exists
     if (storedGraphCost.length > 0) {
         renderChart();
     }
 }
 
 /**
- * Sets the chart type and regenerates the chart
+ * Sets the chart type and re-renders
  * @param {string} chartType - 'line' or 'bar'
  */
 function setChartType(chartType) {
