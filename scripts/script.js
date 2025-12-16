@@ -105,6 +105,52 @@ let button = document.querySelectorAll(".box");
 /** Flag to track if the left mouse button is currently pressed */
 let click = false;
 
+
+/**
+ * Brush shape and size configuration
+ * Set BRUSH_SHAPE to '2x2' for a 2x2 square, or 'thick' for the original thickness logic
+ */
+const BRUSH_SHAPE = '2x2'; // '2x2' or 'thick'
+const BRUSH_THICKNESS = 1; // Only used if BRUSH_SHAPE is 'thick'
+
+/**
+ * Paints a pixel and its neighbors based on brush thickness
+ * Creates a thicker drawing stroke by darkening nearby pixels
+ * 
+ * @param {number} index - The index of the center pixel (0-399)
+ */
+function paintWithThickness(index) {
+  const gridWidth = NETWORK_CONFIG.GRID_WIDTH;
+  const gridHeight = NETWORK_CONFIG.GRID_HEIGHT;
+  const row = Math.floor(index / gridWidth);
+  const col = index % gridWidth;
+  if (BRUSH_SHAPE === '2x2') {
+    // Paint a 2x2 block: (row,col), (row,col+1), (row+1,col), (row+1,col+1)
+    for (let dr = 0; dr <= 1; dr++) {
+      for (let dc = 0; dc <= 1; dc++) {
+        const newRow = row + dr;
+        const newCol = col + dc;
+        if (newRow >= 0 && newRow < gridHeight && newCol >= 0 && newCol < gridWidth) {
+          const neighborIndex = newRow * gridWidth + newCol;
+          button[neighborIndex].style.background = "black";
+        }
+      }
+    }
+  } else {
+    // Default: thick brush (symmetric)
+    for (let dr = -BRUSH_THICKNESS; dr <= BRUSH_THICKNESS; dr++) {
+      for (let dc = -BRUSH_THICKNESS; dc <= BRUSH_THICKNESS; dc++) {
+        const newRow = row + dr;
+        const newCol = col + dc;
+        if (newRow >= 0 && newRow < gridHeight && newCol >= 0 && newCol < gridWidth) {
+          const neighborIndex = newRow * gridWidth + newCol;
+          button[neighborIndex].style.background = "black";
+        }
+      }
+    }
+  }
+}
+
 /**
  * Mouse down event listener
  * Sets click flag to true when left mouse button (button 1) is pressed
@@ -129,18 +175,18 @@ body.addEventListener("mouseup", (event) => {
  * Attach drawing event listeners to each pixel in the grid
  * Supports both mouse (desktop) and touch (mobile) interactions
  */
-button.forEach((button) => {
+button.forEach((btn, index) => {
   // Desktop: Draw on single click (for individual pixels)
-  button.addEventListener("mousedown", (event) => {
+  btn.addEventListener("mousedown", (event) => {
     if (event.buttons === 1) {
-      button.style.background = "black";
+      paintWithThickness(index);
     }
   });
 
   // Desktop: Draw when hovering with mouse button pressed (for dragging)
-  button.addEventListener("mouseover", () => {
+  btn.addEventListener("mouseover", () => {
     if (click == true) {
-      button.style.background = "black";
+      paintWithThickness(index);
     }
   });
 
@@ -150,11 +196,11 @@ button.forEach((button) => {
     const touch = event.touches[0];
     const x = touch.clientX;
     const y = touch.clientY;
-    const rect = button.getBoundingClientRect();
+    const rect = btn.getBoundingClientRect();
 
     // Check if touch position is within this pixel's bounds
     if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-      button.style.background = "black";
+      paintWithThickness(index);
     }
   });
 });
@@ -386,7 +432,7 @@ function train_neural_network() {
       let logits = xA_3;   // output of linear layer
 
       // softmax probabilities (used for loss + accuracy)
-     let probs = softmax(logits);
+      let probs = softmax(logits);
 
       // extract label (VERY IMPORTANT)
       let label = Neural_Network_Train_Data[key][1][0];
