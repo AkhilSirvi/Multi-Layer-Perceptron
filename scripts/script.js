@@ -330,6 +330,17 @@ function train_neural_network() {
    * Computes gradients for all layers by propagating the error
    * backwards from the output layer to the input layer
    */
+  
+  dZ3 = [];   // Output layer: ∂L/∂z³
+  dW3 = [];   // Output layer: ∂L/∂W³
+  dB3 = [];   // Output layer: ∂L/∂b³
+  dZ2 = null; // Hidden layer 2: ∂L/∂z²
+  dW2 = [];   // Hidden layer 2: ∂L/∂W²
+  dB2 = [];   // Hidden layer 2: ∂L/∂b²
+  dZ1 = null; // Hidden layer 1: ∂L/∂z¹
+  dW1 = [];   // Hidden layer 1: ∂L/∂W¹
+  dB1 = [];   // Hidden layer 1: ∂L/∂b¹
+
   function back_propogation() {
     // Temporary variables for layer activations during forward pass
     let xA_0;           // Current input (pixel data)
@@ -345,7 +356,7 @@ function train_neural_network() {
     let softmax_xA_3;    // Softmax output for gradient calculation
     let cost_data = [];  // Cross-entropy loss for each training example
     let accuracy = 0;    // Count of correct predictions
-    
+
     /**
      * Forward pass through all training examples
      * For each example, compute activations and output layer gradient (dZ3)
@@ -369,25 +380,28 @@ function train_neural_network() {
       total_xA_2.push(xA_2);
       
       // Forward propagation: Hidden Layer 2 -> Output Layer
-      xA_3 = forward_propogation(xA_2, W_3, B_3, "TanH");
+      xA_3 = forward_propogation(xA_2, W_3, B_3, "");
       
       // Apply softmax to get probability distribution
-      softmax_xA_3 = softmax(xA_3);
-      let othersoftmax = softmax(xA_3); // Copy for accuracy calculation
-      
-      // Compute output layer gradient: dZ3 = predicted - actual (one-hot encoded)
-      // Subtracting 1 from the true class creates the gradient for cross-entropy loss
-      softmax_xA_3[Neural_Network_Train_Data[key][1]] =
-        softmax_xA_3[Neural_Network_Train_Data[key][1]] - 1;
-      dZ3.push(softmax_xA_3);
+      let logits = xA_3;   // output of linear layer
 
-      // Calculate cross-entropy loss for this example: -log(p_correct)
-      cost_data.push(log(othersoftmax[Neural_Network_Train_Data[key][1]] * 1));
-      
-      // Check if prediction matches the true label (for accuracy calculation)
-      if (othersoftmax[Neural_Network_Train_Data[key][1]] == Math.max.apply(null, othersoftmax)) {
-        accuracy++;
-      }
+      // softmax probabilities (used for loss + accuracy)
+     let probs = softmax(logits);
+
+      // extract label (VERY IMPORTANT)
+      let label = Neural_Network_Train_Data[key][1][0];
+
+      // ----- LOSS -----
+      cost_data.push(Math.log(probs[label]));
+
+      // ----- ACCURACY -----
+      let pred = probs.indexOf(Math.max(...probs));
+      if (pred === label) accuracy++;
+
+      // ----- BACKPROP (softmax + cross-entropy) -----
+      let dZ3_i = probs.slice();
+      dZ3_i[label] -= 1;
+      dZ3.push(dZ3_i);
     }
 
     /**
@@ -623,7 +637,7 @@ function neural_network_main() {
   // Forward propagation through the network
   A_1 = forward_propogation(A_0, W_1, B_1, "TanH");  // Input -> Hidden 1
   A_2 = forward_propogation(A_1, W_2, B_2, "TanH");  // Hidden 1 -> Hidden 2
-  A_3 = forward_propogation(A_2, W_3, B_3, "TanH");  // Hidden 2 -> Output
+  A_3 = forward_propogation(A_2, W_3, B_3, "");  // Hidden 2 -> Output
 
   // Apply softmax to get probability distribution
   const softmax_output = softmax(A_3);
