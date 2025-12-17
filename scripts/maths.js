@@ -74,7 +74,14 @@ function TanH(z) {
     
     return result;
 }
-
+/**
+ * Rectified Linear Unit (ReLU) Activation Function
+ * Mathematical Formula:
+ *   relu(z) = max(0, z)
+ */
+function relu(z) {
+    return Math.max(0, z);
+}
 /**
  * Safe Natural Logarithm
  * 
@@ -179,7 +186,11 @@ function forward_propogation(inputs, weights, biases, activationFn) {
         // Apply activation function: a = σ(z)
         if (activationFn === "TanH") {
             outputs.push(TanH(preActivation));
-        } else {
+        } 
+        else if (activationFn === "relu") {
+            outputs.push(relu(preActivation));
+        }
+        else {
             outputs.push(preActivation);  // Linear (no activation)
         }
     }
@@ -320,17 +331,23 @@ function matrix_multipilcation_with_transpose(M1, M2) {
  * 
  * @param {number[][]} activations - 2D array of TanH outputs
  * @returns {number[][]} Element-wise derivative values
- * 
- * @example
- * derivative_tanH([[0.5, -0.5], [0.8, -0.8]])
- * // → [[0.75, 0.75], [0.36, 0.36]]
  */
 function derivative_tanH(activations) {
     return activations.map(row =>
         row.map(a => 1 - (a * a))
     );
 }
-
+/**
+ * Computes the derivative of ReLU activation
+ * 
+ * Mathematical Formula:
+ *   d/dz relu(z) = 1 if z > 0 else 0
+ */
+function derivative_relu(preActivations) {
+    return preActivations.map(row =>
+        row.map(z => z > 0 ? 1 : 0)
+    );
+}
 /**
  * Element-wise (Hadamard) multiplication of two matrices
  * 
@@ -369,7 +386,7 @@ function element_wise_multiplication(A, B) {
  * Typical values: 0.0001 to 0.01
  * @type {number}
  */
-let lambda = 0.000001;
+let lambda = 0.00001;
 
 /**
  * Updates weight matrix using gradient descent with L2 regularization
@@ -400,10 +417,10 @@ function W_update(weights, learningRate, gradients) {
     // Gradient descent: W = W - α × dW
     const updated = weights.map((w, i) => w - scaledGradients[i]);
     
-    // L2 regularization: W = W + λ × W_old
-    const regularization = weights.map(w => w * lambda);
+    // L2 regularization: Wnew = Wold - α(dW + λ × W_old)
+    const regularization = weights.map(w => w * (lambda * learningRate));
     
-    return updated.map((w, i) => w + regularization[i]);
+    return updated.map((w, i) => w - regularization[i]);
 }
 
 /**

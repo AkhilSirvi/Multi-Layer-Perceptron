@@ -6,8 +6,8 @@
  * 
  * Network Architecture:
  *   Input Layer (A_0):  400 neurons (20×20 pixel grid, flattened)
- *   Hidden Layer 1 (A_1): 16 neurons with TanH activation
- *   Hidden Layer 2 (A_2): 16 neurons with TanH activation
+ *   Hidden Layer 1 (A_1): 16 neurons with TanH/ReLU activation
+ *   Hidden Layer 2 (A_2): 16 neurons with TanH/ReLU activation
  *   Output Layer (A_3):  10 neurons (digits 0-9) with Softmax
  * 
  * Training Algorithm:
@@ -223,8 +223,8 @@ let A_3_length = NETWORK_CONFIG.OUTPUT_SIZE;
  * Populated during forward propagation, reset between predictions
  */
 let A_0 = [];  // Input layer activations (pixel values: 0 or 1)
-let A_1 = [];  // Hidden layer 1 activations (after TanH)
-let A_2 = [];  // Hidden layer 2 activations (after TanH)
+let A_1 = [];  // Hidden layer 1 activations (after TanH/ReLU)
+let A_2 = [];  // Hidden layer 2 activations (after TanH/ReLU)
 let A_3 = [];  // Output layer activations (before softmax)
 
 /**
@@ -242,73 +242,28 @@ let alpha = 0.1;
 /* =============================================================================
  * WEIGHT AND BIAS INITIALIZATION FUNCTIONS
  * ============================================================================= */
-
 /**
- * Initialize weights for Layer 1 (Input -> Hidden1)
- * Creates W_1_length random values between -1 and 1
- * Shape: A_1_length x A_0_length = 16 x 400 = 6,400 weights
+ * Utility to initialize an array with random values between -1 and 1.
+ * @param {number} length - Number of elements.
+ * @returns {number[]}
  */
-function W_1_function_random_no() {
-  let W_1_length = A_1_length * A_0_length;
-  for (let i = 0; i < W_1_length; i++) {
-    W_1.push(random(2));
-  }
+function randomArray(length) {
+  return Array.from({ length }, () => random(2));
 }
+// W_1 = []; // Weights for layer 1 (input -> hidden 1)
+// B_1 = []; // Biases for layer 1
+// W_2 = []; // Weights for layer 2 (hidden 1 -> hidden 2)
+// B_2 = []; // Biases for layer 2
+// W_3 = []; // Weights for layer 3 (hidden 2 -> output)
+// B_3 = []; // Biases for layer 3
 
-/**
- * Initialize biases for Layer 1
- * Creates one bias value per neuron in the first hidden layer
- */
-function B_1_function_random_no() {
-  let B_1_length = A_1_length;
-  for (let i = 0; i < B_1_length; i++) {
-    B_1.push(random(2));
-  }
-}
-
-/**
- * Initialize weights for Layer 2 (Hidden1 -> Hidden2)
- * Shape: A_2_length x A_1_length = 16 x 16 = 256 weights
- */
-function W_2_function_random_no() {
-  let W_2_length = A_1_length * A_2_length;
-  for (let i = 0; i < W_2_length; i++) {
-    W_2.push(random(2));
-  }
-}
-
-/**
- * Initialize biases for Layer 2
- * Creates one bias value per neuron in the second hidden layer
- */
-function B_2_function_random_no() {
-  let B_2_length = A_2_length;
-  for (let i = 0; i < B_2_length; i++) {
-    B_2.push(random(2));
-  }
-}
-
-/**
- * Initialize weights for Layer 3 (Hidden2 -> Output)
- * Shape: A_3_length x A_2_length = 10 x 16 = 160 weights
- */
-function W_3_function_random_no() {
-  let W_3_length = A_2_length * A_3_length;
-  for (let i = 0; i < W_3_length; i++) {
-    W_3.push(random(2));
-  }
-}
-
-/**
- * Initialize biases for Layer 3 (Output layer)
- * Creates one bias value per output neuron (10 total for digits 0-9)
- */
-function B_3_function_random_no() {
-  let B_3_length = A_3_length;
-  for (let i = 0; i < B_3_length; i++) {
-    B_3.push(random(2));
-  }
-}
+// Weight/bias initialization functions (shortened)
+function W_1_function_random_no() { W_1 = randomArray(A_1_length * A_0_length); }
+function B_1_function_random_no() { B_1 = randomArray(A_1_length); }
+function W_2_function_random_no() { W_2 = randomArray(A_1_length * A_2_length); }
+function B_2_function_random_no() { B_2 = randomArray(A_2_length); }
+function W_3_function_random_no() { W_3 = randomArray(A_2_length * A_3_length); }
+function B_3_function_random_no() { B_3 = randomArray(A_3_length); }
 
 /**
  * NOTE: Weight/bias initialization is commented out because
@@ -509,7 +464,7 @@ function train_neural_network() {
     /**
      * Compute dZ2: Gradient of cost with respect to hidden layer 2 pre-activation
      * Formula: dZ2 = (W3^T * dZ3) ⊙ g'(Z2)
-     * Where ⊙ is element-wise multiplication and g'(Z2) is the derivative of TanH
+     * Where ⊙ is element-wise multiplication and g'(Z2) is the derivative of TanH/ReLU
      */
     
     // Convert W_3 flat array to matrix form for transpose
@@ -531,6 +486,8 @@ function train_neural_network() {
     );
     
     // Compute derivative of TanH for hidden layer 2
+    // Compute derivative of ReLU for hidden layer 2
+    // let A_2_derivative = derivative_tanH(total_xA_2);
     let A_2_derivative = derivative_tanH(total_xA_2);
     
     // Element-wise multiplication to get dZ2
@@ -593,6 +550,8 @@ function train_neural_network() {
     );
     
     // Compute derivative of TanH for hidden layer 1
+    // Compute derivative of ReLU for hidden layer 1
+    // let A_1_derivative = derivative_tanH(total_xA_1);
     let A_1_derivative = derivative_tanH(total_xA_1);
     
     // Element-wise multiplication to get dZ1
