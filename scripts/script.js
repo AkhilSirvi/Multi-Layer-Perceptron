@@ -393,7 +393,7 @@ function train_neural_network() {
       let label = Neural_Network_Train_Data[key][1][0];
 
       // ----- LOSS -----
-      cost_data.push(Math.log(probs[label]));
+      cost_data.push(Math.log(probs[label] + EPSILON));
 
       // ----- ACCURACY -----
       let pred = probs.indexOf(Math.max(...probs));
