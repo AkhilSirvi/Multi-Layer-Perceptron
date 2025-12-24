@@ -907,7 +907,7 @@ body::before {
 
 .btn-chip.active {
   color: var(--text-primary);
-  background: var(--primary-color);
+  background: #000000;
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
 }
 
