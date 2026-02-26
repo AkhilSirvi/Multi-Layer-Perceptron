@@ -5,9 +5,9 @@
  * Implements complete forward propagation, backpropagation, and gradient descent.
  * 
  * Network Architecture:
- *   Input Layer (A_0):  400 neurons (20×20 pixel grid, flattened)
- *   Hidden Layer 1 (A_1): 16 neurons with TanH/ReLU activation
- *   Hidden Layer 2 (A_2): 16 neurons with TanH/ReLU activation
+ *   Input Layer (A_0):  784 neurons (28×28 pixel grid, flattened)
+ *   Hidden Layer 1 (A_1): 128 neurons with Leaky ReLU activation
+ *   Hidden Layer 2 (A_2): 64 neurons with Leaky ReLU activation
  *   Output Layer (A_3):  10 neurons (digits 0-9) with Softmax
  * 
  * Training Algorithm:
@@ -16,7 +16,7 @@
  *   - Data Augmentation: Translation, Rotation, Noise
  * 
  * @author Akhil Sirvi
- * @version 2.0.0
+ * @version 2.1.0
  */
 
 'use strict';
@@ -30,12 +30,12 @@
  * Defines the structure of the Multi-Layer Perceptron
  */
 const NETWORK_CONFIG = Object.freeze({
-    INPUT_SIZE: 400,    // 20×20 pixel grid (flattened)
-    HIDDEN_1_SIZE: 16,  // First hidden layer neurons
-    HIDDEN_2_SIZE: 16,  // Second hidden layer neurons
+    INPUT_SIZE: 784,    // 28×28 pixel grid (flattened)
+    HIDDEN_1_SIZE: 128,  // First hidden layer neurons (increased for better capacity)
+    HIDDEN_2_SIZE: 64,   // Second hidden layer neurons
     OUTPUT_SIZE: 10,    // Digit classes (0-9)
-    GRID_WIDTH: 20,     // Drawing grid width
-    GRID_HEIGHT: 20     // Drawing grid height
+    GRID_WIDTH: 28,     // Drawing grid width
+    GRID_HEIGHT: 28     // Drawing grid height
 });
 
 /* =============================================================================
@@ -73,8 +73,7 @@ let alpha_submit = document.getElementById("alpha_submit");
 /**
  * Creates the interactive pixel grid for drawing digits
  * 
- * Generates a 20×20 grid (400 pixels) where users can draw.
- * Each pixel is a div element that toggles between white (0) and black (1).
+ * Generates a 28×28 grid (784 pixels) where users can draw.
  * This grid forms the input layer of the neural network.
  */
 function pixel_creater() {
@@ -84,7 +83,8 @@ function pixel_creater() {
         const pixel = document.createElement("div");
         pixel.className = "box";
         pixel.draggable = false;
-        pixel.dataset.index = i;  // Store pixel index for debugging
+        pixel.dataset.index = i;
+        pixel.dataset.intensity = 0;
         second_box.appendChild(pixel);
     }
 }
@@ -106,50 +106,36 @@ let button = document.querySelectorAll(".box");
 let click = false;
 
 
-/**
- * Brush shape and size configuration
- * Set BRUSH_SHAPE to '2x2' for a 2x2 square, or 'thick' for the original thickness logic
- */
-const BRUSH_SHAPE = '2x2'; // '2x2' or 'thick'
-const BRUSH_THICKNESS = 1; // Only used if BRUSH_SHAPE is 'thick'
 
 /**
- * Paints a pixel and its neighbors based on brush thickness
- * Creates a thicker drawing stroke by darkening nearby pixels
+ * Paints a pixel and its neighbors with grayscale values
+ * Creates a smooth gradient effect for better MNIST compatibility
  * 
- * @param {number} index - The index of the center pixel (0-399)
+ * @param {number} index - The index of the center pixel (0-783)
  */
 function paintWithThickness(index) {
   const gridWidth = NETWORK_CONFIG.GRID_WIDTH;
   const gridHeight = NETWORK_CONFIG.GRID_HEIGHT;
   const row = Math.floor(index / gridWidth);
   const col = index % gridWidth;
-  if (BRUSH_SHAPE === '2x2') {
-    // Paint a 2x2 block: (row,col), (row,col+1), (row+1,col), (row+1,col+1)
-    for (let dr = 0; dr <= 1; dr++) {
-      for (let dc = 0; dc <= 1; dc++) {
-        const newRow = row + dr;
-        const newCol = col + dc;
-        if (newRow >= 0 && newRow < gridHeight && newCol >= 0 && newCol < gridWidth) {
-          const neighborIndex = newRow * gridWidth + newCol;
-          button[neighborIndex].style.background = "black";
-        }
-      }
-    }
-  } else {
-    // Default: thick brush (symmetric)
-    for (let dr = -BRUSH_THICKNESS; dr <= BRUSH_THICKNESS; dr++) {
-      for (let dc = -BRUSH_THICKNESS; dc <= BRUSH_THICKNESS; dc++) {
-        const newRow = row + dr;
-        const newCol = col + dc;
-        if (newRow >= 0 && newRow < gridHeight && newCol >= 0 && newCol < gridWidth) {
-          const neighborIndex = newRow * gridWidth + newCol;
-          button[neighborIndex].style.background = "black";
-        }
+  for (let dr = -1; dr <= 1; dr++) {
+    for (let dc = -1; dc <= 1; dc++) {
+      const newRow = row + dr;
+      const newCol = col + dc;
+      if (newRow >= 0 && newRow < gridHeight && newCol >= 0 && newCol < gridWidth) {
+        const neighborIndex = newRow * gridWidth + newCol;
+        const pixel = button[neighborIndex];
+        const distance = Math.abs(dr) + Math.abs(dc);
+        const intensity = distance === 0 ? 1 : 1 * 0.3;
+        const currentIntensity = parseFloat(pixel.dataset.intensity) || 0;
+        const newIntensity = Math.min(1.0, currentIntensity + intensity);
+        pixel.dataset.intensity = newIntensity;
+        const grayValue = Math.round((1 - newIntensity) * 255);
+        pixel.style.background = `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
       }
     }
   }
-}
+} 
 
 /**
  * Mouse down event listener
@@ -222,19 +208,15 @@ let A_3_length = NETWORK_CONFIG.OUTPUT_SIZE;
  * Activation arrays for each layer
  * Populated during forward propagation, reset between predictions
  */
-let A_0 = [];  // Input layer activations (pixel values: 0 or 1)
-let A_1 = [];  // Hidden layer 1 activations (after TanH/ReLU)
-let A_2 = [];  // Hidden layer 2 activations (after TanH/ReLU)
+let A_0 = [];  // Input layer activations
+let A_1 = [];  // Hidden layer 1 activations (after activation function)
+let A_2 = [];  // Hidden layer 2 activations (after activation function)
 let A_3 = [];  // Output layer activations (before softmax)
 
 /**
  * Learning Rate (α/alpha)
  * 
  * Controls the step size during gradient descent optimization.
- * - Smaller values (0.001-0.01): Slower but more stable convergence
- * - Larger values (0.1-1.0): Faster but potentially unstable/overshooting
- * 
- * Recommended: Start with 0.01-0.1, adjust based on loss curve
  * @type {number}
  */
 let alpha = 0.1;
@@ -266,16 +248,25 @@ function W_3_function_random_no() { W_3 = randomArray(A_2_length * A_3_length); 
 function B_3_function_random_no() { B_3 = randomArray(A_3_length); }
 
 /**
- * NOTE: Weight/bias initialization is commented out because
- * pre-trained weights are loaded from data.js
- * Uncomment these to train from scratch with random initialization
+ * Weight/bias initialization
+ * If pre-trained weights exist in data.js, they will be used.
+ * Otherwise, initialize with random values for training from scratch.
  */
-// W_1_function_random_no();
-// B_1_function_random_no();
-// W_2_function_random_no();
-// B_2_function_random_no();
-// W_3_function_random_no();
-// B_3_function_random_no();
+if (typeof W_1 === 'undefined' || W_1.length === 0) {
+  console.log('Initializing weights from scratch...');
+  W_1_function_random_no();
+  B_1_function_random_no();
+  W_2_function_random_no();
+  B_2_function_random_no();
+  W_3_function_random_no();
+  B_3_function_random_no();
+} else {
+  console.log('Pre-trained weights loaded from data.js');
+  console.log(`W_1: ${W_1.length} params (expected: ${NETWORK_CONFIG.INPUT_SIZE * NETWORK_CONFIG.HIDDEN_1_SIZE})`);
+  console.log(`W_2: ${W_2.length} params (expected: ${NETWORK_CONFIG.HIDDEN_1_SIZE * NETWORK_CONFIG.HIDDEN_2_SIZE})`);
+  console.log(`W_3: ${W_3.length} params (expected: ${NETWORK_CONFIG.HIDDEN_2_SIZE * NETWORK_CONFIG.OUTPUT_SIZE})`);
+  console.log(`Training samples: ${Object.keys(Neural_Network_Train_Data).length}`);
+}
 
 /* =============================================================================
  * BACKPROPAGATION GRADIENT VARIABLES
@@ -372,12 +363,12 @@ function train_neural_network() {
         Neural_Network_Train_Data[key][0],
         W_1,
         B_1,
-        "TanH"
+        "leaky_relu"
       );
       total_xA_1.push(xA_1);
       
       // Forward propagation: Hidden Layer 1 -> Hidden Layer 2
-      xA_2 = forward_propogation(xA_1, W_2, B_2, "TanH");
+      xA_2 = forward_propogation(xA_1, W_2, B_2, "leaky_relu");
       total_xA_2.push(xA_2);
       
       // Forward propagation: Hidden Layer 2 -> Output Layer
@@ -419,10 +410,20 @@ function train_neural_network() {
     // Log training metrics to console and UI
     console.log("The cost is " + new_cost);
     console.log("The accuracy is " + (accuracy/m)*100);
+    
+    if (Math.random() < 0.1) {  // 10% of iterations
+      let weak_neurons_1 = total_xA_1[0].filter(a => Math.abs(a) < 0.01).length;
+      let weak_neurons_2 = total_xA_2[0].filter(a => Math.abs(a) < 0.01).length;
+      console.log(`Weak neurons (<0.01) - Layer1: ${weak_neurons_1}/${A_1_length}, Layer2: ${weak_neurons_2}/${A_2_length}`);
+    }
+    
     cost_value_box.innerHTML = "The Cost Is " + new_cost + "<br>" + "The Accuracy Is " + (accuracy/m)*100;
     
-    // Append metrics to graph data string for visualization
     graphdata += `the cost is ` + new_cost + `\n` + `The accuracy is ` + (accuracy/m)*100 + `\n`;
+    const lines = graphdata.split('\n');
+    if (lines.length > 2000) {
+      graphdata = lines.slice(-2000).join('\n');
+    }
     graphgenerater();
 
     /**
@@ -470,12 +471,16 @@ function train_neural_network() {
     // Convert W_3 flat array to matrix form for transpose
     let matrix_of_W_3 = [];
     let g_sum = [];
-    for (let g = 0; g <= W_3.length; g++) {
+    for (let g = 0; g < W_3.length; g++) {
       if (g_sum.length === A_2_length) {
         matrix_of_W_3.push(g_sum);
         g_sum = [];
       }
       g_sum.push(W_3[g]);
+    }
+    // Push the final row if it exists
+    if (g_sum.length > 0) {
+      matrix_of_W_3.push(g_sum);
     }
     matrix_of_W_3 = transposeMatrix(matrix_of_W_3);
     
@@ -485,10 +490,8 @@ function train_neural_network() {
       dZ3
     );
     
-    // Compute derivative of TanH for hidden layer 2
-    // Compute derivative of ReLU for hidden layer 2
-    // let A_2_derivative = derivative_tanH(total_xA_2);
-    let A_2_derivative = derivative_tanH(total_xA_2);
+    // Compute derivative of Leaky ReLU for hidden layer 2
+    let A_2_derivative = derivative_leaky_relu(total_xA_2);
     
     // Element-wise multiplication to get dZ2
     dZ2 = element_wise_multiplication(multiply_of_W3T_dZ3, A_2_derivative);
@@ -534,12 +537,16 @@ function train_neural_network() {
     // Convert W_2 flat array to matrix form for transpose
     let matrix_of_W_2 = [];
     let q_sum = [];
-    for (let g = 0; g <= W_2.length; g++) {
+    for (let g = 0; g < W_2.length; g++) {
       if (q_sum.length === A_1_length) {
         matrix_of_W_2.push(q_sum);
         q_sum = [];
       }
       q_sum.push(W_2[g]);
+    }
+    // Push the final row if it exists
+    if (q_sum.length > 0) {
+      matrix_of_W_2.push(q_sum);
     }
     matrix_of_W_2 = transposeMatrix(matrix_of_W_2);
     
@@ -549,10 +556,8 @@ function train_neural_network() {
       dZ2
     );
     
-    // Compute derivative of TanH for hidden layer 1
-    // Compute derivative of ReLU for hidden layer 1
-    // let A_1_derivative = derivative_tanH(total_xA_1);
-    let A_1_derivative = derivative_tanH(total_xA_1);
+    // Compute derivative of Leaky ReLU for hidden layer 1
+    let A_1_derivative = derivative_leaky_relu(total_xA_1);
     
     // Element-wise multiplication to get dZ1
     dZ1 = element_wise_multiplication(multiply_of_W2T_dZ2, A_1_derivative);
@@ -630,18 +635,15 @@ function neural_network_main() {
     newinterval = null;
   }
   
-  // Convert the pixel grid to input array (0 = white, 1 = black)
+  // Convert the pixel grid to input array (grayscale 0.0-1.0)
   button.forEach((btn) => {
-    if (btn.style.background != "black") {
-      A_0.push(0);  // White pixel = 0
-    } else {
-      A_0.push(1);  // Black pixel = 1
-    }
+    const intensity = parseFloat(btn.dataset.intensity) || 0;
+    A_0.push(intensity);  // Use grayscale value (0.0 = white, 1.0 = black)
   });
 
   // Forward propagation through the network
-  A_1 = forward_propogation(A_0, W_1, B_1, "TanH");  // Input -> Hidden 1
-  A_2 = forward_propogation(A_1, W_2, B_2, "TanH");  // Hidden 1 -> Hidden 2
+  A_1 = forward_propogation(A_0, W_1, B_1, "leaky_relu");  // Input -> Hidden 1
+  A_2 = forward_propogation(A_1, W_2, B_2, "leaky_relu");  // Hidden 1 -> Hidden 2
   A_3 = forward_propogation(A_2, W_3, B_3, "");  // Hidden 2 -> Output
 
   // Apply softmax to get probability distribution
@@ -675,29 +677,30 @@ function neural_network_main() {
  * ============================================================================= */
 
 /**
- * Adds random noise to a binary image
+ * Adds random noise to a grayscale image
  * 
- * Randomly converts white pixels (0) to black (1) based on probability.
- * Black pixels remain unchanged (preserves the drawn digit).
+ * Adds Gaussian noise to pixels to improve robustness.
+ * Works with grayscale values (0.0-1.0).
  * 
- * @param {number[]} image - Flattened binary pixel array
+ * @param {number[]} image - Flattened grayscale pixel array (0-1)
  * @param {number} width - Image width in pixels
  * @param {number} height - Image height in pixels  
- * @param {number} keepWhiteProb - Probability of keeping white pixel white (0-1)
- *                                 0.99 = 1% chance of noise per white pixel
+ * @param {number} noiseLevel - Standard deviation of Gaussian noise (0-0.1 typical)
  * @returns {number[]} Image with random noise added
  * 
  * @example
- * noisefunction(image, 20, 20, 0.99)  // 1% noise probability
+ * noisefunction(image, 28, 28, 0.05)  // 5% noise
  */
-function noisefunction(image, width, height, keepWhiteProb) {
+function noisefunction(image, width, height, noiseLevel = 0.005) {
     return image.map(pixel => {
-        if (pixel === 0) {
-            // White pixel: randomly flip to black based on probability
-            return Math.random() < keepWhiteProb ? 0 : 1;
-        }
-        // Black pixel: keep unchanged
-        return 1;
+        // Add Gaussian noise (using Box-Muller transform)
+        const u1 = Math.random();
+        const u2 = Math.random();
+        const gaussianNoise = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+        const noisyPixel = pixel + (gaussianNoise * noiseLevel);
+        
+        // Clamp to [0, 1] range
+        return Math.max(0, Math.min(1, noisyPixel));
     });
 }
 
@@ -730,9 +733,8 @@ function position(image, height, width, dx, dy) {
     for (let y = 0; y < height; y++) {
         translated[y] = [];
         for (let x = 0; x < width; x++) {
-            // Calculate source coordinates
-            const srcX = x + dx;
-            const srcY = y + dy;
+            const srcX = x - dx;
+            const srcY = y - dy;
             
             // Check bounds and copy pixel or fill with white
             if (srcX >= 0 && srcX < width && srcY >= 0 && srcY < height) {
@@ -807,42 +809,46 @@ function rotation(image, angleDegrees, height, width) {
 /**
  * Applies random data augmentation to training data
  * 
- * Augmentation Pipeline:
- *   1. Random translation: ±4 pixels in x and y
- *   2. Random noise: 1% probability per white pixel
- *   3. Random rotation: ±15 degrees
+ * Augmentation Pipeline (optimized for grayscale MNIST):
+ *   1. Random translation: ±2 pixels in x and y (reduced from ±4)
+ *   2. Random noise: Small Gaussian noise (3% std dev)
+ *   3. Random rotation: ±10 degrees (reduced from ±15)
  *   4. Cleanup: Replace undefined values with 0
  * 
  * This helps the model generalize better by seeing varied
  * versions of the training examples.
  * 
- * @param {Object} targetData - Training data object to modify
  * @param {Object} sourceData - Original training data (reference)
  */
-function randomnessadder(targetData, sourceData) {
-    const gridSize = NETWORK_CONFIG.GRID_WIDTH;
+function randomnessadder(sourceData) {
+  const gridSize = NETWORK_CONFIG.GRID_WIDTH;
     
+    // Build a fresh augmented copy based on the provided sourceData
+    const augmentedDataset = JSON.parse(JSON.stringify(sourceData));
+
     for (const key in sourceData) {
-        let augmented = sourceData[key][0];
-        
-        // Step 1: Random translation (±4 pixels)
-        const dx = randomrangenumber(-4, 4);
-        const dy = randomrangenumber(-4, 4);
-        augmented = position(augmented, gridSize, gridSize, dx, dy);
-        
-        // Step 2: Add random noise (1% probability)
-        augmented = noisefunction(augmented, gridSize, gridSize, 0.99);
-        
-        // Step 3: Random rotation (±15 degrees)
-        const angle = randomrangenumber(-15, 15);
-        augmented = rotation(augmented, angle, gridSize, gridSize);
-        
-        // Step 4: Cleanup - replace null/undefined with 0
-        augmented = augmented.map(val => (val == null) ? 0 : val);
-        
-        // Update training data with augmented version
-        targetData[key][0] = augmented;
+      let augmented = sourceData[key][0].slice(); // Copy array
+
+      // Step 1: Random translation
+      const dx = randomrangenumber(-2, 2);
+      const dy = randomrangenumber(-2, 2);
+      augmented = position(augmented, gridSize, gridSize, dx, dy);
+
+      // Step 2: Add random Gaussian noise (3% std dev)
+      augmented = noisefunction(augmented, gridSize, gridSize, 0.03);
+
+      // Step 3: Random rotation (±5 degrees)
+      const angle = randomrangenumber(-5, 5);
+      augmented = rotation(augmented, angle, gridSize, gridSize);
+
+      // Step 4: Cleanup - replace null/undefined with 0
+      augmented = augmented.map(val => (val == null || isNaN(val)) ? 0 : val);
+
+      // Place augmented sample into the new dataset (don't mutate original in-place)
+      augmentedDataset[key][0] = augmented;
     }
+
+    return augmentedDataset;
 }
 
 /** Deep copy of training data (reference for augmentation) */
@@ -906,9 +912,9 @@ function train_button() {
             return;
         }
         
-        // Step 1: Apply data augmentation if enabled
+        // Step 1: Apply data augmentation if enabled (use fresh augmented copy)
         if (useDataAugmentation) {
-            randomnessadder(Neural_Network_Train_Data, neuralnetworkdatacopy);
+          Neural_Network_Train_Data = randomnessadder(neuralnetworkdatacopy);
         }
         
         // Step 2-4: Forward prop, backprop, and parameter update
@@ -948,9 +954,32 @@ function train_button() {
  *   - Training iterations: Number of epochs per train button click
  */
 alpha_submit.addEventListener("click", () => {
-    alpha = parseFloat(alpha_value.value) || 0.1;
-    lambda = parseFloat(document.getElementById("lambda_value").value) || 0.000001;
-    training_length = parseInt(train_length_input.value, 10) || 20;
+    // Validate and clamp hyperparameters to safe ranges
+    let newAlpha = parseFloat(alpha_value.value) || 0.1;
+    let newLambda = parseFloat(document.getElementById("lambda_value").value) || 0.000001;
+    let newIterations = parseInt(train_length_input.value, 10) || 20;
+    
+    // Validate learning rate (0.0001 to 10)
+    if (newAlpha <= 0 || newAlpha > 10) {
+        alert('Learning rate must be between 0.0001 and 10');
+        newAlpha = 0.1;
+    }
+    
+    // Validate lambda (0 to 1)
+    if (newLambda < 0 || newLambda > 1) {
+        alert('Lambda must be between 0 and 1');
+        newLambda = 0.000001;
+    }
+    
+    // Validate iterations (1 to 10000)
+    if (newIterations < 1 || newIterations > 10000) {
+        alert('Training iterations must be between 1 and 10000');
+        newIterations = 20;
+    }
+    
+    alpha = newAlpha;
+    lambda = newLambda;
+    training_length = newIterations;
     
     console.log(`Hyperparameters updated: α=${alpha}, λ=${lambda}, iterations=${training_length}`);
 });

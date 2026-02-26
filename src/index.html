@@ -252,6 +252,7 @@
         const boxes = document.querySelectorAll('.box');
         boxes.forEach(box => {
           box.style.background = 'white';
+          box.dataset.intensity = 0;
         });
         document.getElementById('output_text').innerHTML = '<p class="placeholder-text">Draw a digit and click "Recognize"</p>';
       }

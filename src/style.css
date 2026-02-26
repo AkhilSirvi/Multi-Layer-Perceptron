@@ -236,7 +236,7 @@ body::before {
 
 #second, .drawing-grid {
   display: grid;
-  grid-template-columns: repeat(20, 1fr);
+  grid-template-columns: repeat(28, 1fr);
   gap: 1px;
   background: var(--bg-light);
   padding: 2px;
@@ -248,10 +248,10 @@ body::before {
 }
 
 .box {
-  width: 18px;
-  height: 18px;
+  width: 12px;
+  height: 12px;
   background-color: #ffffff;
-  border-radius: 2px;
+  border-radius: 1px;
   transition: background-color var(--transition-fast), transform var(--transition-fast);
 }
 
@@ -693,8 +693,8 @@ body::before {
   }
 
   .box {
-    width: 14px;
-    height: 14px;
+    width: 11px;
+    height: 11px;
   }
 
   #second, .drawing-grid {
@@ -725,8 +725,8 @@ body::before {
 /* Very small screens */
 @media only screen and (max-width: 360px) {
   .box {
-    width: 12px;
-    height: 12px;
+    width: 9px;
+    height: 9px;
   }
 }
 

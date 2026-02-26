@@ -83,6 +83,15 @@ function relu(z) {
     return Math.max(0, z);
 }
 /**
+ * Leaky ReLU Activation Function
+ * Prevents dying ReLU problem by allowing small negative gradients
+ * Mathematical Formula:
+ *   leaky_relu(z) = z if z > 0 else 0.01*z
+ */
+function leaky_relu(z) {
+    return z > 0 ? z : 0.01 * z;
+}
+/**
  * Safe Natural Logarithm
  * 
  * Used for cross-entropy loss calculation: L = -Σ y·log(ŷ)
@@ -190,6 +199,9 @@ function forward_propogation(inputs, weights, biases, activationFn) {
         else if (activationFn === "relu") {
             outputs.push(relu(preActivation));
         }
+        else if (activationFn === "leaky_relu") {
+            outputs.push(leaky_relu(preActivation));
+        }
         else {
             outputs.push(preActivation);  // Linear (no activation)
         }
@@ -214,6 +226,7 @@ function forward_propogation(inputs, weights, biases, activationFn) {
  * Numerical Stability:
  *   Uses the log-sum-exp trick to prevent overflow:
  *   softmax(z_i) = e^(z_i - max(z)) / Σ_j e^(z_j - max(z))
+ *   Also clamps extreme values to prevent overflow/underflow.
  * 
  * Properties:
  *   - Output range: (0, 1) for each element
@@ -228,17 +241,20 @@ function forward_propogation(inputs, weights, biases, activationFn) {
  * // → [0.659, 0.242, 0.099] (approximately)
  */
 function softmax(logits) {
+    // Clamp extreme values to prevent overflow
+    const clampedLogits = logits.map(z => Math.max(-100, Math.min(100, z)));
+    
     // Find max for numerical stability (log-sum-exp trick)
-    const maxLogit = Math.max(...logits);
+    const maxLogit = Math.max(...clampedLogits);
     
     // Compute shifted exponentials to prevent overflow
-    const expValues = logits.map(z => Math.exp(z - maxLogit));
+    const expValues = clampedLogits.map(z => Math.exp(z - maxLogit));
     
     // Sum of exponentials (denominator)
     const expSum = expValues.reduce((sum, val) => sum + val, 0);
     
-    // Normalize to get probabilities
-    return expValues.map(exp => exp / expSum);
+    // Normalize to get probabilities (add epsilon for numerical stability)
+    return expValues.map(exp => exp / (expSum + EPSILON));
 }
 
 /* =============================================================================
@@ -342,10 +358,31 @@ function derivative_tanH(activations) {
  * 
  * Mathematical Formula:
  *   d/dz relu(z) = 1 if z > 0 else 0
+ * 
+ * Since ReLU(z) = max(0, z), we can determine the derivative from the activation:
+ *   If activation > 0, then z > 0, so derivative = 1
+ *   If activation = 0, then z <= 0, so derivative = 0
+ * 
+ * @param {number[][]} activations - 2D array of ReLU outputs
+ * @returns {number[][]} Element-wise derivative values
  */
-function derivative_relu(preActivations) {
-    return preActivations.map(row =>
-        row.map(z => z > 0 ? 1 : 0)
+function derivative_relu(activations) {
+    return activations.map(row =>
+        row.map(a => a > 0 ? 1 : 0)
+    );
+}
+/**
+ * Computes the derivative of Leaky ReLU activation
+ * 
+ * Mathematical Formula:
+ *   d/dz leaky_relu(z) = 1 if z > 0 else 0.01
+ * 
+ * @param {number[][]} activations - 2D array of Leaky ReLU outputs
+ * @returns {number[][]} Element-wise derivative values
+ */
+function derivative_leaky_relu(activations) {
+    return activations.map(row =>
+        row.map(a => a > 0 ? 1 : 0.01)
     );
 }
 /**
@@ -392,15 +429,13 @@ let lambda = 0.00001;
  * Updates weight matrix using gradient descent with L2 regularization
  * 
  * Update Rule:
- *   W_new = W_old - α × dW + λ × W_old
+ *   W_new = W_old - α × dW - α × λ × W_old
  * 
  * Components:
  *   - α × dW: Gradient descent step (move against gradient)
- *   - λ × W:  Regularization term (weight persistence)
+ *   - α × λ × W: L2 regularization (weight decay - penalizes large weights)
  * 
- * Note: Standard L2 regularization subtracts λ×W (weight decay).
- * This implementation adds it for backward compatibility with
- * pre-trained weights. The effect is minor for small λ.
+ * L2 regularization helps prevent overfitting by keeping weights small.
  * 
  * @param {number[]} weights - Current weight values
  * @param {number} learningRate - Step size (α)
@@ -417,7 +452,7 @@ function W_update(weights, learningRate, gradients) {
     // Gradient descent: W = W - α × dW
     const updated = weights.map((w, i) => w - scaledGradients[i]);
     
-    // L2 regularization: Wnew = Wold - α(dW + λ × W_old)
+    // L2 regularization (weight decay): W = W - α × λ × W
     const regularization = weights.map(w => w * (lambda * learningRate));
     
     return updated.map((w, i) => w - regularization[i]);
