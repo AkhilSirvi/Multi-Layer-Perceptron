@@ -126,7 +126,6 @@ body::before {
 
 .logo i {
   font-size: 2rem;
-  animation: pulse 2s ease-in-out infinite;
 }
 
 @keyframes pulse {
@@ -481,7 +480,6 @@ body::before {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(5px);
   display: none;
   justify-content: center;
   align-items: center;
@@ -495,7 +493,6 @@ body::before {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(5px);
   display: none;
   justify-content: center;
   align-items: center;
@@ -605,7 +602,6 @@ body::before {
 
 .footer i.fa-heart {
   color: var(--danger-color);
-  animation: heartbeat 1.5s ease-in-out infinite;
 }
 
 @keyframes heartbeat {

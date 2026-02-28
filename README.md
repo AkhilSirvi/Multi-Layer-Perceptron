@@ -10,8 +10,8 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Neural_Network-MLP-6366f1?style=flat-square" alt="Neural Network">
   <img src="https://img.shields.io/badge/Layers-3-10b981?style=flat-square" alt="Layers">
-  <img src="https://img.shields.io/badge/Neurons-400→16→16→10-f59e0b?style=flat-square" alt="Neurons">
-  <img src="https://img.shields.io/badge/Activation-TanH_|_Softmax-ec4899?style=flat-square" alt="Activation">
+  <img src="https://img.shields.io/badge/Neurons-784→128→64→10-f59e0b?style=flat-square" alt="Neurons">
+  <img src="https://img.shields.io/badge/Activation-TanH_|_Leaky ReLU_|_ReLU_|_Softmax-ec4899?style=flat-square" alt="Activation">
 </p>
 
 <p align="center">
@@ -54,13 +54,13 @@ A fully functional neural network system for handwritten digit recognition, buil
 
 ## Features
 
-- ✏️ **Interactive Drawing Canvas** - 20x20 pixel grid for drawing digits
-- 🧠 **Real-time Prediction** - Instant digit recognition with confidence percentages
-- 📊 **Training Visualization** - Live chart showing cost and accuracy during training
-- ⚙️ **Adjustable Hyperparameters** - Modify learning rate, regularization, and training iterations
-- 📱 **Responsive Design** - Works on both desktop and mobile devices
-- 🔄 **Data Augmentation** - Automatic translation, rotation, and noise for better generalization
-- 💾 **Pre-trained Weights** - Ready to use immediately without training
+- **Interactive Drawing Canvas** - 28x28 pixel grid for drawing digits
+- **Real-time Prediction** - Instant digit recognition with confidence percentages
+- **Training Visualization** - Live chart showing cost and accuracy during training
+- **Adjustable Hyperparameters** - Modify learning rate, regularization, and training iterations
+- **Responsive Design** - Works on both desktop and mobile devices
+- **Data Augmentation** - Automatic translation, rotation, and noise for better generalization
+- **Pre-trained Weights** - Ready to use immediately without training
 
 ---
 
@@ -70,12 +70,12 @@ The network uses a classic Multi-Layer Perceptron (MLP) architecture with 3 laye
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           NETWORK ARCHITECTURE                               │
+│                           NETWORK ARCHITECTURE                              │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
+│                                                                             │
 │   INPUT LAYER          HIDDEN LAYER 1      HIDDEN LAYER 2      OUTPUT       │
-│   (400 neurons)        (16 neurons)        (16 neurons)        (10 neurons) │
-│                                                                              │
+│   (784 neurons)        (128 neurons)       (64 neurons)        (10 neurons) │
+│                                                                             │
 │   ┌───┐                 ┌───┐               ┌───┐               ┌───┐       │
 │   │ 1 │─────────────────│ 1 │───────────────│ 1 │───────────────│ 0 │       │
 │   ├───┤                 ├───┤               ├───┤               ├───┤       │
@@ -84,15 +84,15 @@ The network uses a classic Multi-Layer Perceptron (MLP) architecture with 3 laye
 │   │ 3 │─────────────────│ 3 │───────────────│ 3 │───────────────│ 2 │       │
 │   ├───┤      W1         ├───┤      W2       ├───┤      W3       ├───┤       │
 │   │...│ ──────────────► │...│ ────────────► │...│ ────────────► │...│       │
-│   ├───┤  (6,400 weights)├───┤ (256 weights) ├───┤ (160 weights) ├───┤       │
+│   ├───┤(100,352 weights)├───┤(8192 weights) ├───┤(640 weights)  ├───┤       │
 │   │399│                 │15 │               │15 │               │ 8 │       │
 │   ├───┤                 ├───┤               ├───┤               ├───┤       │
 │   │400│─────────────────│16 │───────────────│16 │───────────────│ 9 │       │
 │   └───┘                 └───┘               └───┘               └───┘       │
-│                                                                              │
-│   20×20 pixel grid      TanH activation     TanH activation     Softmax     │
-│   (flattened)           + Bias              + Bias              (probabilities)│
-│                                                                              │
+│                                                                             │
+│   28×28 pixel grid      Leaky ReLU         Leaky ReLU           Softmax     │
+│   (flattened)           + Bias              + Bias           (probabilities)│
+│                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -100,12 +100,12 @@ The network uses a classic Multi-Layer Perceptron (MLP) architecture with 3 laye
 
 | Layer | Neurons | Weights | Biases | Activation |
 |-------|---------|---------|--------|------------|
-| Input (A₀) | 400 | - | - | - |
-| Hidden 1 (A₁) | 16 | 6,400 | 16 | TanH |
-| Hidden 2 (A₂) | 16 | 256 | 16 | TanH |
-| Output (A₃) | 10 | 160 | 10 | Softmax |
+| Input (A₀) | 784 | - | - | - |
+| Hidden 1 (A₁) | 128 | 100,352 | 128 | Leaky ReLU |
+| Hidden 2 (A₂) | 64 | 8192 | 64 | Leaky ReLU |
+| Output (A₃) | 10 | 640 | 10 | Softmax |
 
-**Total Parameters:** 6,858 (6,816 weights + 42 biases)
+**Total Parameters:** 109,386 (109,184 weights + 202 biases)
 
 ---
 
@@ -115,14 +115,20 @@ The network uses a classic Multi-Layer Perceptron (MLP) architecture with 3 laye
 
 Forward propagation passes input data through the network to produce predictions:
 
-```
-For each layer l:
-    Z[l] = W[l] · A[l-1] + B[l]    (weighted sum + bias)
-    A[l] = g(Z[l])                  (apply activation function)
-```
+### Layer Computation
+
+For each layer $l$:
+
+$$
+Z^{[l]} = W^{[l]} A^{[l-1]} + b^{[l]}
+$$
+
+$$
+A^{[l]} = g\left(Z^{[l]}\right)
+$$
 
 **Step-by-step process:**
-1. **Input Layer (A₀):** Flatten the 20×20 drawing grid into a 400-element array (0 = white, 1 = black)
+1. **Input Layer (A₀):** Flatten the 28×28 drawing grid into a 784-element array (0 = white, 1 = black)
 2. **Hidden Layer 1 (A₁):** Compute `A₁ = TanH(W₁ · A₀ + B₁)`
 3. **Hidden Layer 2 (A₂):** Compute `A₂ = TanH(W₂ · A₁ + B₂)`
 4. **Output Layer (A₃):** Compute `A₃ = Softmax(W₃ · A₂ + B₃)`
@@ -133,56 +139,102 @@ The output is a probability distribution over digits 0-9. The digit with the hig
 
 Backpropagation computes gradients to update weights and biases, minimizing the cost function:
 
-```
-Cost Function: Cross-Entropy Loss
-J = -(1/m) × Σ log(p_correct)
+### Cost Function — Cross-Entropy Loss
 
-where:
-- m = number of training examples
-- p_correct = predicted probability of the true class
-```
+$$
+J = -\frac{1}{m} \sum_{i=1}^{m} \log\left(p_{\text{correct}}^{(i)}\right)
+$$
+
+where  
+
+- $m$ = number of training examples  
+- $p_{\text{correct}}^{(i)}$ = predicted probability of the true class for example $i$
 
 **Gradient Computation (backward pass):**
 
-```
-Output Layer:
-    dZ₃ = A₃ - Y                    (softmax gradient with cross-entropy)
-    dW₃ = (1/m) × dZ₃ᵀ · A₂
-    dB₃ = (1/m) × Σ dZ₃
+### Backpropagation
 
-Hidden Layer 2:
-    dZ₂ = (W₃ᵀ · dZ₃) ⊙ g'(A₂)     (⊙ = element-wise multiplication)
-    dW₂ = (1/m) × dZ₂ᵀ · A₁
-    dB₂ = (1/m) × Σ dZ₂
+#### Output Layer
 
-Hidden Layer 1:
-    dZ₁ = (W₂ᵀ · dZ₂) ⊙ g'(A₁)
-    dW₁ = (1/m) × dZ₁ᵀ · A₀
-    dB₁ = (1/m) × Σ dZ₁
-```
+$$
+dZ^{[3]} = A^{[3]} - Y
+$$
+
+$$
+dW^{[3]} = \frac{1}{m} \, dZ^{[3]} (A^{[2]})^T
+$$
+
+$$
+db^{[3]} = \frac{1}{m} \sum dZ^{[3]}
+$$
+
+---
+
+#### Hidden Layer 2
+
+$$
+dZ^{[2]} = (W^{[3]})^T dZ^{[3]} \odot g'(A^{[2]})
+$$
+
+$$
+dW^{[2]} = \frac{1}{m} \, dZ^{[2]} (A^{[1]})^T
+$$
+
+$$
+db^{[2]} = \frac{1}{m} \sum dZ^{[2]}
+$$
+
+---
+
+#### Hidden Layer 1
+
+$$
+dZ^{[1]} = (W^{[2]})^T dZ^{[2]} \odot g'(A^{[1]})
+$$
+
+$$
+dW^{[1]} = \frac{1}{m} \, dZ^{[1]} (A^{[0]})^T
+$$
+
+$$
+db^{[1]} = \frac{1}{m} \sum dZ^{[1]}
+$$
 
 **Parameter Update (Gradient Descent with L2 Regularization):**
 
-```
-W = W - α × dW + λ × W
-B = B - α × dB
+### Parameter Update Rule
 
-where:
-- α = learning rate (controls step size)
-- λ = regularization coefficient (prevents overfitting)
-```
+$$
+W = W - \alpha\, dW - \lambda\, W
+$$
+
+$$
+B = B - \alpha\, dB
+$$
+
+where  
+
+- $\alpha$ = learning rate (controls step size)  
+- $\lambda$ = regularization coefficient (prevents overfitting)
 
 ### Activation Functions
 
 #### TanH (Hyperbolic Tangent)
 Used in hidden layers to introduce non-linearity:
 
-```
-tanh(z) = (eᶻ - e⁻ᶻ) / (eᶻ + e⁻ᶻ)
+### Tanh Activation
 
-Output range: (-1, 1)
-Derivative: g'(a) = 1 - a²
-```
+$$
+\tanh(z) = \frac{e^{z} - e^{-z}}{e^{z} + e^{-z}}
+$$
+
+Output range: $(-1, 1)$
+
+Derivative:
+
+$$
+g'(z) = 1 - \tanh^2(z)
+$$
 
 **Properties:**
 - Zero-centered output (helps with convergence)
@@ -192,11 +244,13 @@ Derivative: g'(a) = 1 - a²
 #### Softmax
 Used in the output layer for multi-class classification:
 
-```
-softmax(zᵢ) = eᶻⁱ / Σⱼ eᶻʲ
+### Softmax Function
+
+$$
+\text{softmax}(z_i) = \frac{e^{z_i}}{\sum_{j=1}^{n} e^{z_j}}
+$$
 
 Output: Probability distribution (all values sum to 1)
-```
 
 **Properties:**
 - Converts raw scores to probabilities
@@ -211,13 +265,13 @@ To improve generalization and prevent overfitting, training data is augmented wi
 
 ### 1. Translation (Position Shift)
 ```
-Shifts the image randomly by -4 to +4 pixels in both X and Y directions
+Shifts the image randomly by -2 to +2 pixels in both X and Y directions
 Helps the model recognize digits regardless of position
 ```
 
 ### 2. Rotation
 ```
-Rotates the image randomly by -15° to +15°
+Rotates the image randomly by -5° to +5°
 Helps the model recognize slightly tilted digits
 Uses 2D rotation matrix:
     x' = x·cos(θ) - y·sin(θ)
@@ -226,7 +280,7 @@ Uses 2D rotation matrix:
 
 ### 3. Noise Addition
 ```
-Randomly flips white pixels (0) to black (1) with 1% probability
+Randomly flips pixels random gaussian noise (3% std dev)
 Adds robustness against noisy input
 ```
 
@@ -247,7 +301,7 @@ Multi-Layer-Perceptron/
 │   │                         - Prediction (forward propagation)
 │   │                         - Data augmentation functions
 │   ├── maths.js            # Mathematical operations
-│   │                         - Activation functions (TanH, Softmax)
+│   │                         - Activation functions
 │   │                         - Matrix operations
 │   │                         - Gradient descent updates
 │   ├── graph.js            # Training visualization
@@ -268,7 +322,7 @@ Multi-Layer-Perceptron/
 
 ### Prerequisites
 - A modern web browser (Chrome, Firefox, Safari, Edge)
-- No additional dependencies required!
+- No additional dependencies required
 
 ### Installation
 
@@ -299,7 +353,7 @@ Multi-Layer-Perceptron/
 
 ### Drawing and Recognition
 
-1. **Draw a digit** on the 20×20 pixel grid using your mouse or touch
+1. **Draw a digit** on the 28×28 pixel grid using your mouse or touch
 2. **Click "Enter your written data"** to get the prediction
 3. The output panel shows:
    - The predicted digit (highest probability)
@@ -345,32 +399,43 @@ Multi-Layer-Perceptron/
 ### No External ML Libraries!
 This project implements neural networks from scratch without TensorFlow, PyTorch, or any ML frameworks. All matrix operations, activation functions, and backpropagation are coded manually for educational purposes.
 
----
-
 ## Mathematical Formulas Reference
 
 ### Forward Propagation
-```
-A[l] = g(W[l] · A[l-1] + B[l])
-```
+
+$$
+A^{[l]} = g\left(W^{[l]} A^{[l-1]} + b^{[l]}\right)
+$$
 
 ### Cost Function (Cross-Entropy)
-```
-J = -(1/m) × Σᵢ Σⱼ yᵢⱼ × log(âᵢⱼ)
-```
+
+$$
+J = -\frac{1}{m} \sum_{i=1}^{m} \sum_{j=1}^{n} y_{ij} \log(\hat{a}_{ij})
+$$
 
 ### Backpropagation Gradients
-```
-dW[l] = (1/m) × dZ[l] · A[l-1]ᵀ
-dB[l] = (1/m) × Σ dZ[l]
-dZ[l-1] = W[l]ᵀ · dZ[l] ⊙ g'(Z[l-1])
-```
+
+$$
+dW^{[l]} = \frac{1}{m} dZ^{[l]} (A^{[l-1]})^T
+$$
+
+$$
+db^{[l]} = \frac{1}{m} \sum dZ^{[l]}
+$$
+
+$$
+dZ^{[l-1]} = (W^{[l]})^T dZ^{[l]} \odot g'(Z^{[l-1]})
+$$
 
 ### Gradient Descent Update
-```
-W[l] := W[l] - α × dW[l] + λ × W[l]
-B[l] := B[l] - α × dB[l]
-```
+
+$$
+W^{[l]} := W^{[l]} - \alpha dW^{[l]} - \lambda W^{[l]}
+$$
+
+$$
+b^{[l]} := b^{[l]} - \alpha db^{[l]}
+$$
 
 ---
 
@@ -393,9 +458,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Inspired by the MNIST handwritten digit dataset
 - Thanks to the deep learning community for educational resources
 - Chart.js for the excellent charting library
-
----
-
-<p align="center">
-  Made with ❤️ and JavaScript
-</p>
