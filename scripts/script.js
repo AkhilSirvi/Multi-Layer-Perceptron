@@ -854,6 +854,66 @@ function randomnessadder(sourceData) {
 /** Deep copy of training data (reference for augmentation) */
 const neuralnetworkdatacopy = JSON.parse(JSON.stringify(Neural_Network_Train_Data));
 
+/* ============================================================================
+   AUGMENTATION PREVIEW HELPERS
+============================================================================ */
+window._previewState = { active: false, original: null };
+
+function previewAugmentation() {
+  const boxes = document.querySelectorAll('.box');
+  if (!boxes || !boxes.length) return;
+
+  const btn = document.getElementById('previewAugBtn');
+
+  // Activate preview: save original and replace with augmented sample
+  if (!window._previewState.active) {
+    const original = Array.from(boxes).map(b => parseFloat(b.dataset.intensity) || 0);
+    window._previewState.original = original;
+
+    let augmented = null;
+    // Prefer a random sample from the loaded training data if available
+    try {
+      if (typeof Neural_Network_Train_Data !== 'undefined' && Object.keys(Neural_Network_Train_Data).length) {
+        const keys = Object.keys(Neural_Network_Train_Data);
+        const randKey = keys[Math.floor(Math.random() * keys.length)];
+        const sample = Neural_Network_Train_Data[randKey];
+        // sample format: [pixelsArray, [label]]
+        augmented = (sample && sample[0]) ? sample[0].slice() : null;
+      }
+    } catch (e) { augmented = null; }
+
+    // Fallback: augment current drawing using randomnessadder
+    if (!augmented) {
+      const src = { preview_sample: [original.slice(), [0]] };
+      const augmentedObj = randomnessadder(src);
+      augmented = augmentedObj.preview_sample[0];
+    }
+
+    boxes.forEach((b, i) => {
+      const v = augmented[i] || 0;
+      b.dataset.intensity = v;
+      const gray = Math.round((1 - v) * 255);
+      b.style.background = `rgb(${gray}, ${gray}, ${gray})`;
+    });
+
+    window._previewState.active = true;
+    if (btn) btn.innerHTML = '<i class="fas fa-undo"></i> Restore Original';
+  } else {
+    // Restore original drawing
+    const orig = window._previewState.original || Array.from(boxes).map(() => 0);
+    boxes.forEach((b, i) => {
+      const v = orig[i] || 0;
+      b.dataset.intensity = v;
+      const gray = Math.round((1 - v) * 255);
+      b.style.background = `rgb(${gray}, ${gray}, ${gray})`;
+    });
+
+    window._previewState.active = false;
+    window._previewState.original = null;
+    if (btn) btn.innerHTML = '<i class="fas fa-eye"></i> Draw From MNIST';
+  }
+}
+
 /* =============================================================================
  * TRAINING CONFIGURATION & UI CONTROLS
  * ============================================================================= */
