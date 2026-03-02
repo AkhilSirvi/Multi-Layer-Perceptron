@@ -28,7 +28,7 @@ A fully functional neural network system for handwritten digit recognition, buil
 🔗 **Live Demo:** [https://akhilsirvi.github.io/Multi-Layer-Perceptron/src/index.html](https://akhilsirvi.github.io/Multi-Layer-Perceptron/src/index.html)
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/133025697/250265474-5206e6e2-7dcc-4a61-9d8b-cbffd7e57da6.png" alt="Neural Network System Screenshot">
+  <img width="1119" height="578" alt="image" src="https://github.com/user-attachments/assets/abd61d8f-80aa-41c6-b1d5-8b85ad8890ea" />
 </p>
 
 ---
