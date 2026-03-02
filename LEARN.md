@@ -100,42 +100,48 @@ for (let n = 0; n < layer.neurons.length; n++) {
 Our network has a specific architecture designed for digit recognition:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    NETWORK ARCHITECTURE                         │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  INPUT LAYER          HIDDEN LAYERS           OUTPUT LAYER      │
-│  (400 neurons)        (16 + 16 neurons)       (10 neurons)      │
-│                                                                 │
-│  ┌───┐                ┌───┐    ┌───┐          ┌───┐            │
-│  │ 1 │───────────────▶│ 1 │───▶│ 1 │─────────▶│ 0 │ P(0)       │
-│  ├───┤    Weights     ├───┤    ├───┤          ├───┤            │
-│  │ 2 │───────────────▶│ 2 │───▶│ 2 │─────────▶│ 1 │ P(1)       │
-│  ├───┤                ├───┤    ├───┤          ├───┤            │
-│  │...│                │...│    │...│          │...│            │
-│  ├───┤                ├───┤    ├───┤          ├───┤            │
-│  │400│───────────────▶│16 │───▶│16 │─────────▶│ 9 │ P(9)       │
-│  └───┘                └───┘    └───┘          └───┘            │
-│                                                                 │
-│  20×20 pixel          TanH      TanH          Softmax          │
-│  image grid         activation activation    (probabilities)   │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           NETWORK ARCHITECTURE                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   INPUT LAYER          HIDDEN LAYER 1      HIDDEN LAYER 2      OUTPUT       │
+│   (784 neurons)        (128 neurons)       (64 neurons)        (10 neurons) │
+│                                                                             │
+│   ┌───┐                 ┌───┐               ┌───┐               ┌───┐       │
+│   │ 1 │─────────────────│ 1 │───────────────│ 1 │───────────────│ 0 │       │
+│   ├───┤                 ├───┤               ├───┤               ├───┤       │
+│   │ 2 │─────────────────│ 2 │───────────────│ 2 │───────────────│ 1 │       │
+│   ├───┤                 ├───┤               ├───┤               ├───┤       │
+│   │ 3 │─────────────────│ 3 │───────────────│ 3 │───────────────│ 2 │       │
+│   ├───┤      W1         ├───┤      W2       ├───┤      W3       ├───┤       │
+│   │...│ ──────────────► │...│ ────────────► │...│ ────────────► │...│       │
+│   ├───┤(100,352 weights)├───┤(8192 weights) ├───┤(640 weights)  ├───┤       │
+│   │783│                 │127│               │63 │               │ 8 │       │
+│   ├───┤                 ├───┤               ├───┤               ├───┤       │
+│   │784│─────────────────│128│───────────────│64 │───────────────│ 9 │       │
+│   └───┘                 └───┘               └───┘               └───┘       │
+│                                                                             │
+│   28×28 pixel grid      Leaky ReLU         Leaky ReLU           Softmax     │
+│   (flattened)           + Bias              + Bias           (probabilities)│
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Layer Breakdown
 
-| Layer | Neurons | Purpose | Activation |
-|-------|---------|---------|------------|
-| Input | 400 | Raw pixel values (20×20 grid) | None |
-| Hidden 1 | 16 | Learn basic features (edges, curves) | TanH |
-| Hidden 2 | 16 | Combine features into patterns | TanH |
-| Output | 10 | Probability for each digit (0-9) | Softmax |
+| Layer | Neurons | Weights | Biases | Activation |
+|-------|---------|---------|--------|------------|
+| Input (A₀) | 784 | - | - | - |
+| Hidden 1 (A₁) | 128 | 100,352 | 128 | Leaky ReLU |
+| Hidden 2 (A₂) | 64 | 8192 | 64 | Leaky ReLU |
+| Output (A₃) | 10 | 640 | 10 | Softmax |
+
+**Total Parameters:** 109,386 (109,184 weights + 202 biases)
 
 ### Why These Numbers?
 
-- **400 inputs**: 20×20 = 400 pixels in our drawing grid
-- **16 hidden neurons**: Balance between capacity and training speed
+- **784 inputs**: 28×28 = 784 pixels in our drawing grid
+- **128 & 64 hidden neurons**: Balance between capacity and training speed
 - **10 outputs**: One for each digit (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
 
 ---
@@ -149,15 +155,15 @@ Our network has a specific architecture designed for digit recognition:
 ```
 Step 1: Normalize input pixels (0-1 range)
            ↓
-Step 2: Feed to Hidden Layer 1 (400 → 16)
+Step 2: Feed to Hidden Layer 1
            ↓
 Step 3: Apply TanH activation
            ↓
-Step 4: Feed to Hidden Layer 2 (16 → 16)
+Step 4: Feed to Hidden Layer 2
            ↓
 Step 5: Apply TanH activation
            ↓
-Step 6: Feed to Output Layer (16 → 10)
+Step 6: Feed to Output Layer
            ↓
 Step 7: Apply Softmax (get probabilities)
            ↓
@@ -168,7 +174,7 @@ Step 8: Return highest probability digit
 
 ```javascript
 function forwardprop(image) {
-    let inputValues = image;  // 400 pixel values
+    let inputValues = image;  // 784 pixel values
     
     // Process each layer
     for (let l = 0; l < nn.layers.length; l++) {
@@ -577,19 +583,6 @@ function addNoise(image, intensity) {
 }
 ```
 
-### Visual Example
-
-```
-Original:     Rotated:      Translated:   Noisy:
-  ███           ██▌            ███        ░██░
- █   █        ██  █           █   █       █ ░ █
-   ██           ██              ██        ░ ██░
- █   █        █   █           █   █       █░  █
-  ███          ███             ███        ░██▒░
-```
-
----
-
 ## Practical Tips
 
 ### Getting Good Results
@@ -699,30 +692,3 @@ $$\frac{\partial L}{\partial b_i} = \delta_i$$
 - [Stanford CS231n](https://cs231n.stanford.edu/) - Deep learning for computer vision
 - [The Matrix Calculus You Need For Deep Learning](https://arxiv.org/abs/1802.01528) - Mathematical foundations
 
----
-
-## 🎓 Exercises
-
-### Beginner
-
-1. **Train the network** and observe how loss decreases over iterations
-2. **Toggle data augmentation** and compare accuracy with/without it
-3. **Try different learning rates** and observe the training behavior
-
-### Intermediate
-
-4. **Modify the network architecture** - Add more neurons to hidden layers
-5. **Implement a new activation function** (ReLU: `max(0, x)`)
-6. **Add a third hidden layer** and compare training
-
-### Advanced
-
-7. **Implement momentum** for faster convergence
-8. **Add dropout** for regularization
-9. **Implement batch normalization**
-
----
-
-*Happy Learning! 🚀*
-
-*This guide was written to accompany the Multi-Layer Perceptron digit recognition project. The concepts here apply to all neural networks!*
