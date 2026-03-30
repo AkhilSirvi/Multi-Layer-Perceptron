@@ -7,16 +7,9 @@
     <link rel="stylesheet" href="style.css" />
     <title>Neural Network - Digit Recognition</title>
     
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <meta name="description" content="Interactive neural network web app for handwritten digit recognition.">
     <!-- Load data.js first - contains pre-trained weights and training data -->
     <script src="../scripts/data.js"></script>
@@ -28,7 +21,7 @@
     <header class="header">
       <div class="header-content">
         <div class="logo">
-          <i class="fas fa-brain"></i>
+          <span class="icon" aria-hidden="true">🧠</span>
           <span>Neural Network</span>
         </div>
         <h1 class="title">Handwritten Digit Recognition</h1>
@@ -45,17 +38,16 @@
       <section class="drawing-section">
         <div class="card drawing-card">
           <div class="card-header">
-            <i class="fas fa-pencil-alt"></i>
             <h2>Draw Here</h2>
           </div>
           <div class="card-body">
-            <!-- Drawing Grid: 20x20 pixel canvas -->
+            <!-- Drawing Grid: 28x28 pixel canvas -->
             <div id="second" class="drawing-grid"></div>
             <button onclick="clearCanvas()" class="btn btn-secondary btn-clear">
-              <i class="fas fa-eraser"></i> Clear Canvas
+              Clear Canvas
             </button>
             <button id="previewAugBtn" onclick="previewAugmentation()" class="btn btn-secondary btn-clear">
-              <i class="fas fa-eye"></i> Draw From MNIST
+              Draw From MNIST
             </button>
           </div>
         </div>
@@ -65,7 +57,7 @@
       <section class="output-section">
         <div class="card output-card" id="first">
           <div class="card-header">
-            <i class="fas fa-chart-pie"></i>
+            <span class="icon" aria-hidden="true">◔</span>
             <h2>Prediction</h2>
           </div>
           <div class="card-body">
@@ -79,11 +71,11 @@
       <!-- Action Buttons -->
       <section class="actions-section">
         <button onclick="neural_network_main()" id="enterdatabutton" class="btn btn-primary btn-large">
-          <i class="fas fa-magic"></i>
+          <span class="icon" aria-hidden="true">✨</span>
           Recognize Digit
         </button>
         <button onclick="train_button()" id="traindatabutton" class="btn btn-accent btn-large">
-          <i class="fas fa-graduation-cap"></i>
+          <span class="icon" aria-hidden="true">🎓</span>
           Train Network
         </button>
       </section>
@@ -96,7 +88,6 @@
     <section class="controls-section">
       <div class="card controls-card">
         <div class="card-header">
-          <i class="fas fa-sliders-h"></i>
           <h2>Training Parameters</h2>
         </div>
         <div class="card-body">
@@ -104,7 +95,6 @@
             
             <div class="control-group">
               <label for="alpha_value">
-                <i class="fas fa-tachometer-alt"></i>
                 Learning Rate (α)
               </label>
               <input type="number" id="alpha_value" value="0.1" step="0.01" min="0.001" max="1">
@@ -113,7 +103,7 @@
             
             <div class="control-group">
               <label for="train_length_input">
-                <i class="fas fa-redo"></i>
+                <span class="icon" aria-hidden="true">↻</span>
                 Training Iterations
               </label>
               <input type="number" id="train_length_input" value="20" min="1" max="200">
@@ -122,7 +112,7 @@
             
             <div class="control-group">
               <label for="lambda_value">
-                <i class="fas fa-shield-alt"></i>
+                <span class="icon" aria-hidden="true">🛡</span>
                 Regularization (λ)
               </label>
               <input type="number" id="lambda_value" value="0.00001" step="0.000001" min="0">
@@ -131,7 +121,6 @@
             
             <div class="control-group">
               <label for="augmentation_toggle">
-                <i class="fas fa-random"></i>
                 Data Augmentation
               </label>
               <div class="toggle-container">
@@ -146,7 +135,6 @@
             
             <div class="control-group control-button">
               <button id="alpha_submit" class="btn btn-success">
-                <i class="fas fa-check"></i>
                 Apply Settings
               </button>
             </div>
@@ -165,7 +153,7 @@
     <div id="loadbar" class="modal-overlay">
       <div class="modal-content">
         <div class="modal-header">
-          <i class="fas fa-cog fa-spin"></i>
+          <span class="icon spin" aria-hidden="true">⚙</span>
           <span id="loadbartitle">Training in Progress...</span>
         </div>
         <div class="progress-container">
@@ -181,7 +169,7 @@
     <section class="chart-section">
       <div class="card chart-card">
         <div class="card-header">
-          <i class="fas fa-chart-line"></i>
+          <span class="icon" aria-hidden="true">📈</span>
           <h2>Training Progress</h2>
           
           <!-- Graph View Controls -->
@@ -189,26 +177,26 @@
             <span class="chart-controls-label">Scale:</span>
             <div class="btn-group" id="scaleTypeGroup">
               <button class="btn-chip active" data-scale="linear" onclick="setGraphScale('linear')">
-                <i class="fas fa-grip-lines"></i> Linear
+                Linear
               </button>
               <button class="btn-chip" data-scale="logarithmic" onclick="setGraphScale('logarithmic')">
-                <i class="fas fa-wave-square"></i> Logarithmic
+                Logarithmic
               </button>
             </div>
             <span class="chart-controls-label">Chart:</span>
             <div class="btn-group" id="chartTypeGroup">
               <button class="btn-chip active" data-chart="line" onclick="setChartType('line')">
-                <i class="fas fa-chart-line"></i> Line
+                Line
               </button>
               <button class="btn-chip" data-chart="bar" onclick="setChartType('bar')">
-                <i class="fas fa-chart-bar"></i> Bar
+                Bar
               </button>
             </div>
             <button class="btn-chip btn-chip-icon" onclick="toggleFill()" id="fillToggle" title="Toggle Fill">
-              <i class="fas fa-fill-drip"></i>
+              <span class="icon" aria-hidden="true">▧</span>
             </button>
             <button class="btn-chip btn-chip-icon" onclick="resetGraphData()" title="Reset Graph">
-              <i class="fas fa-trash-alt"></i>
+              <span class="icon" aria-hidden="true">🗑</span>
             </button>
           </div>
         </div>
@@ -223,10 +211,10 @@
          ============================================================ -->
     <footer class="footer">
       <div class="footer-content">
-        <p>Created with <i class="fas fa-heart"></i> by <strong>Akhil Sirvi</strong></p>
+        <p>Created by <strong>Akhil Sirvi</strong></p>
         <p class="footer-links">
           <a href="https://github.com/akhilsirvi/Multi-Layer-Perceptron" target="_blank">
-            <i class="fab fa-github"></i> View on GitHub
+            View on GitHub
           </a>
         </p>
       </div>
