@@ -851,8 +851,59 @@ function randomnessadder(sourceData) {
     return augmentedDataset;
 }
 
+function clear_drawing() {
+  button.forEach((btn) => {
+    btn.dataset.intensity = 0;
+    btn.style.background = "rgb(255, 255, 255)";
+  });
+  output_text.innerHTML = '<p class="placeholder-text">Draw a digit and click "Recognize"</p>';
+}
+
 /** Deep copy of training data (reference for augmentation) */
-const neuralnetworkdatacopy = JSON.parse(JSON.stringify(Neural_Network_Train_Data));
+let neuralnetworkdatacopy = null;
+
+// Populate copy safely
+if (typeof Neural_Network_Train_Data !== 'undefined') {
+  neuralnetworkdatacopy = JSON.parse(JSON.stringify(Neural_Network_Train_Data));
+}
+
+/**
+ * Adds the user's current drawing to the training dataset
+ */
+function add_own_drawing_to_data() {
+  const labelInput = document.getElementById("custom_label_input");
+  const labelVal = parseInt(labelInput.value, 10);
+  
+  if (isNaN(labelVal) || labelVal < 0 || labelVal > 9) {
+    alert("Please enter a valid digit (0-9) for this drawing.");
+    return;
+  }
+
+  // Get current drawing
+  let new_A_0 = [];
+  button.forEach((btn) => {
+    const intensity = parseFloat(btn.dataset.intensity) || 0;
+    new_A_0.push(intensity);
+  });
+
+  // Determine a new key
+  const newKey = "custom_" + Date.now();
+  
+  // Format matching existing Neural_Network_Train_Data
+  Neural_Network_Train_Data[newKey] = [new_A_0, [labelVal]];
+  
+  // Also update the backup used for augmentation loops
+  if (neuralnetworkdatacopy) {
+    neuralnetworkdatacopy[newKey] = [new_A_0, [labelVal]];
+  }
+
+  // Update training set length
+  m = Object.keys(Neural_Network_Train_Data).length;
+
+  alert(`Added digit ${labelVal} to the training data! Total samples: ${m}`);
+  clear_drawing(); // Clear drawing so they can draw another
+  labelInput.value = "";
+}
 
 /* ============================================================================
    AUGMENTATION PREVIEW HELPERS

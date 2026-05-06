@@ -71,13 +71,27 @@
       <!-- Action Buttons -->
       <section class="actions-section">
         <button onclick="neural_network_main()" id="enterdatabutton" class="btn btn-primary btn-large">
-          <span class="icon" aria-hidden="true">✨</span>
           Recognize Digit
         </button>
         <button onclick="train_button()" id="traindatabutton" class="btn btn-accent btn-large">
-          <span class="icon" aria-hidden="true">🎓</span>
           Train Network
         </button>
+        <button onclick="clear_drawing()" class="btn btn-secondary btn-large">
+          Clear
+        </button>
+      </section>
+
+      <!-- Custom Training Data Section -->
+      <section class="actions-section" style="grid-row: 3; margin-top: 0;">
+        <div class="control-group" style="flex-direction: row; align-items: center; justify-content: center; background: var(--glass-bg); padding: var(--spacing-sm) var(--spacing-lg); border-radius: var(--radius-lg); border: 1px solid var(--glass-border); flex-wrap: wrap;">
+          <label for="custom_label_input" style="margin: 0; color: var(--text-primary); font-size: 1.1rem;">
+            Actual Digit:
+          </label>
+          <input type="number" id="custom_label_input" placeholder="0-9" min="0" max="9" style="width: 100px; padding: var(--spacing-sm) var(--spacing-md); text-align: center; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--glass-border); border-radius: var(--radius-md); color: var(--text-primary); font-size: 1.1rem;">
+          <button onclick="add_own_drawing_to_data()" class="btn btn-success">
+            Add to Dataset
+          </button>
+        </div>
       </section>
 
     </main>
@@ -169,7 +183,6 @@
     <section class="chart-section">
       <div class="card chart-card">
         <div class="card-header">
-          <span class="icon" aria-hidden="true">📈</span>
           <h2>Training Progress</h2>
           
           <!-- Graph View Controls -->
