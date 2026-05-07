@@ -213,7 +213,6 @@ body::before {
 
 .actions-section {
   grid-column: 1 / -1;
-  grid-row: 2;
   display: flex;
   justify-content: center;
   gap: var(--spacing-lg);
@@ -645,7 +644,6 @@ body::before {
   }
 
   .actions-section {
-    grid-row: 3;
     flex-direction: column;
     align-items: stretch;
   }

@@ -310,7 +310,7 @@ Multi-Layer-Perceptron/
 │   └── data.js             # Pre-trained weights & training data
 │                             - Weight matrices (W1, W2, W3)
 │                             - Bias vectors (B1, B2, B3)
-│                             - MNIST-style training examples
+│                             - training examples
 ├── README.md               # Project documentation
 ├── LICENSE                 # MIT License
 └── SECURITY.md             # Security policy

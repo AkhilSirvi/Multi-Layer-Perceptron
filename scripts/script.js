@@ -109,7 +109,7 @@ let click = false;
 
 /**
  * Paints a pixel and its neighbors with grayscale values
- * Creates a smooth gradient effect for better MNIST compatibility
+ * Creates a smooth gradient effect for better custom dataset compatibility
  * 
  * @param {number} index - The index of the center pixel (0-783)
  */
@@ -809,7 +809,7 @@ function rotation(image, angleDegrees, height, width) {
 /**
  * Applies random data augmentation to training data
  * 
- * Augmentation Pipeline (optimized for grayscale MNIST):
+ * Augmentation Pipeline (optimized for custom dataset):
  *   1. Random translation: ±2 pixels in x and y (reduced from ±4)
  *   2. Random noise: Small Gaussian noise (3% std dev)
  *   3. Random rotation: ±10 degrees (reduced from ±15)
@@ -830,7 +830,7 @@ function randomnessadder(sourceData) {
       let augmented = sourceData[key][0].slice(); // Copy array
 
       // Step 1: Random translation
-      const dx = randomrangenumber(-2, 2);
+      const dx = randomrangenumber(-8, 8);
       const dy = randomrangenumber(-2, 2);
       augmented = position(augmented, gridSize, gridSize, dx, dy);
 
@@ -961,7 +961,7 @@ function previewAugmentation() {
 
     window._previewState.active = false;
     window._previewState.original = null;
-    if (btn) btn.innerHTML = '<i class="fas fa-eye"></i> Draw From MNIST';
+    if (btn) btn.innerHTML = '<i class="fas fa-eye"></i> Draw From Dataset';
   }
 }
 
