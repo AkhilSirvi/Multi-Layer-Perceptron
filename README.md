@@ -98,12 +98,12 @@ The network uses a classic Multi-Layer Perceptron (MLP) architecture with 3 laye
 
 ### Layer Details
 
-| Layer | Neurons | Weights | Biases | Activation |
-|-------|---------|---------|--------|------------|
-| Input (A₀) | 784 | - | - | - |
-| Hidden 1 (A₁) | 128 | 100,352 | 128 | Leaky ReLU |
-| Hidden 2 (A₂) | 64 | 8192 | 64 | Leaky ReLU |
-| Output (A₃) | 10 | 640 | 10 | Softmax |
+| Layer         | Neurons | Weights | Biases | Activation |
+|---------------|---------|---------|--------|------------|
+| Input (A₀)    | 784     | -       | -      | -          |
+| Hidden 1 (A₁) | 128     | 100,352 | 128    | Leaky ReLU |
+| Hidden 2 (A₂) | 64      | 8192    | 64     | Leaky ReLU |
+| Output (A₃)   | 10      | 640     | 10     | Softmax    |
 
 **Total Parameters:** 109,386 (109,184 weights + 202 biases)
 
@@ -374,11 +374,11 @@ Multi-Layer-Perceptron/
 
 ## Hyperparameters
 
-| Parameter | Default | Description | Recommended Range |
-|-----------|---------|-------------|-------------------|
-| **Alpha (α)** | 0.1 | Learning rate - controls gradient descent step size | 0.001 - 1.0 |
-| **Training Length** | 20 | Number of training iterations/epochs | 10 - 100 |
-| **Lambda (λ)** | 0.000001 | L2 regularization coefficient | 0.000001 - 0.01 |
+| Parameter           | Default  | Description                                         | Recommended Range |
+|---------------------|----------|-----------------------------------------------------|-------------------|
+| **Alpha (α)**       | 0.1      | Learning rate - controls gradient descent step size | 0.001 - 1.0       |
+| **Training Length** | 20       | Number of training iterations/epochs                | 10 - 100          |
+| **Lambda (λ)**      | 0.000001 | L2 regularization coefficient                       | 0.000001 - 0.01   |
 
 ### Tuning Tips
 
