@@ -1,24 +1,4 @@
-/**
- * Neural Network System - Modern Stylesheet
- * 
- * A beautiful, modern UI for the Multi-Layer Perceptron
- * digit recognition application.
- * 
- * Features:
- * - Modern gradient backgrounds
- * - Glass-morphism card effects
- * - Smooth animations and transitions
- * - Fully responsive design
- * - Beautiful color scheme
- * 
- * @author Akhil Sirvi
- */
-
-/* =============================================================================
-   CSS CUSTOM PROPERTIES (Variables)
-   ============================================================================= */
 :root {
-  /* Color Palette */
   --primary-color: #6366f1;
   --primary-dark: #4f46e5;
   --primary-light: #818cf8;
@@ -27,43 +7,30 @@
   --success-color: #10b981;
   --success-dark: #059669;
   --danger-color: #ef4444;
-  
-  /* Neutral Colors */
   --bg-dark: #0f172a;
   --bg-medium: #1e293b;
   --bg-light: #334155;
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
-  
-  /* Glass Effect */
   --glass-bg: rgba(255, 255, 255, 0.1);
   --glass-border: rgba(255, 255, 255, 0.2);
   --glass-shadow: rgba(0, 0, 0, 0.3);
-  
-  /* Spacing */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
   --spacing-md: 1rem;
   --spacing-lg: 1.5rem;
   --spacing-xl: 2rem;
   --spacing-2xl: 3rem;
-  
-  /* Border Radius */
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 1rem;
   --radius-xl: 1.5rem;
-  
-  /* Transitions */
   --transition-fast: 150ms ease;
   --transition-normal: 300ms ease;
   --transition-slow: 500ms ease;
 }
-
-/* =============================================================================
-   GLOBAL RESET & BASE STYLES
-   ============================================================================= */
+      
 *, *::before, *::after {
   margin: 0;
   padding: 0;
@@ -76,7 +43,7 @@ html {
 
 body {
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-medium) 50%, var(--bg-dark) 100%);
+  background: #111111;
   background-attachment: fixed;
   color: var(--text-primary);
   min-height: 100vh;
@@ -92,7 +59,6 @@ body {
   line-height: 1;
 }
 
-/* Animated background effect */
 body::before {
   content: '';
   position: fixed;
@@ -100,21 +66,13 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background: 
-    radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 80%, rgba(245, 158, 11, 0.1) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
   pointer-events: none;
   z-index: -1;
 }
 
-/* =============================================================================
-   HEADER STYLES
-   ============================================================================= */
 .header {
   padding: var(--spacing-xl) var(--spacing-md);
   text-align: center;
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.2) 0%, transparent 100%);
 }
 
 .header-content {
@@ -148,21 +106,12 @@ body::before {
   margin-bottom: var(--spacing-sm);
 }
 
-.subtitle {
-  font-size: 1.1rem;
-  color: var(--text-secondary);
-  font-weight: 300;
-}
-
-/* =============================================================================
-   CARD COMPONENT
-   ============================================================================= */
 .card {
   background: var(--glass-bg);
   backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
   overflow: hidden;
-  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+  transition: transform var(--transition-normal);
 }
 
 .card-header {
@@ -188,9 +137,6 @@ body::before {
   padding: var(--spacing-lg);
 }
 
-/* =============================================================================
-   MAIN APPLICATION LAYOUT
-   ============================================================================= */
 .main-app {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -219,9 +165,6 @@ body::before {
   flex-wrap: wrap;
 }
 
-/* =============================================================================
-   DRAWING GRID STYLES
-   ============================================================================= */
 .drawing-card .card-body {
   display: flex;
   flex-direction: column;
@@ -235,10 +178,6 @@ body::before {
   gap: 1px;
   background: var(--bg-light);
   padding: 2px;
-  border-radius: var(--radius-md);
-  box-shadow: 
-    inset 0 2px 10px rgba(0, 0, 0, 0.3),
-    0 0 30px rgba(99, 102, 241, 0.2);
   cursor: crosshair;
 }
 
@@ -246,7 +185,6 @@ body::before {
   width: 12px;
   height: 12px;
   background-color: #ffffff;
-  border-radius: 1px;
   transition: background-color var(--transition-fast), transform var(--transition-fast);
 }
 
@@ -255,9 +193,6 @@ body::before {
   transform: scale(1.1);
 }
 
-/* =============================================================================
-   OUTPUT PANEL STYLES
-   ============================================================================= */
 #first, .output-card {
   height: 100%;
   min-height: 400px;
@@ -288,9 +223,6 @@ body::before {
   font-style: italic;
 }
 
-/* =============================================================================
-   BUTTON STYLES
-   ============================================================================= */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -301,7 +233,6 @@ body::before {
   font-size: 1rem;
   font-weight: 500;
   border: none;
-  border-radius: var(--radius-lg);
   cursor: pointer;
   transition: all var(--transition-normal);
   text-decoration: none;
@@ -317,46 +248,36 @@ body::before {
   font-size: 1.1rem;
 }
 
-/* Primary Button */
 .btn-primary {
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
   color: white;
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
 }
 
 .btn-primary:hover {
   background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
-  box-shadow: 0 6px 25px rgba(99, 102, 241, 0.5);
   transform: translateY(-2px);
 }
 
-/* Accent Button */
 .btn-accent {
   background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-dark) 100%);
   color: white;
-  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
 }
 
 .btn-accent:hover {
   background: linear-gradient(135deg, #fbbf24 0%, var(--accent-color) 100%);
-  box-shadow: 0 6px 25px rgba(245, 158, 11, 0.5);
   transform: translateY(-2px);
 }
 
-/* Success Button */
 .btn-success {
   background: linear-gradient(135deg, var(--success-color) 0%, var(--success-dark) 100%);
   color: white;
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
 }
 
 .btn-success:hover {
   background: linear-gradient(135deg, #34d399 0%, var(--success-color) 100%);
-  box-shadow: 0 6px 25px rgba(16, 185, 129, 0.5);
   transform: translateY(-2px);
 }
 
-/* Secondary Button */
 .btn-secondary {
   background: var(--glass-bg);
   color: var(--text-primary);
@@ -372,7 +293,6 @@ body::before {
   font-size: 0.9rem;
 }
 
-/* Legacy button support */
 #enterdatabutton, #traindatabutton {
   display: inline-flex;
   align-items: center;
@@ -383,14 +303,10 @@ body::before {
   font-size: 1.1rem;
   font-weight: 500;
   border: none;
-  border-radius: var(--radius-lg);
   cursor: pointer;
   transition: all var(--transition-normal);
 }
 
-/* =============================================================================
-   CONTROLS SECTION
-   ============================================================================= */
 .controls-section {
   max-width: 1000px;
   margin: var(--spacing-xl) auto;
@@ -430,7 +346,6 @@ body::before {
   font-size: 1rem;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-md);
   color: var(--text-primary);
   transition: all var(--transition-normal);
 }
@@ -438,7 +353,6 @@ body::before {
 .control-group input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
 .control-hint {
@@ -450,12 +364,10 @@ body::before {
   justify-content: flex-end;
 }
 
-/* Metrics Display */
 #cost_value_output, .metrics-display {
   margin-top: var(--spacing-lg);
   padding: var(--spacing-lg);
   background: rgba(0, 0, 0, 0.2);
-  border-radius: var(--radius-md);
   font-family: 'Courier New', monospace;
   font-size: 0.9rem;
   line-height: 1.8;
@@ -466,9 +378,6 @@ body::before {
   display: none;
 }
 
-/* =============================================================================
-   PROGRESS MODAL
-   ============================================================================= */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -499,12 +408,10 @@ body::before {
 .modal-content {
   background: var(--bg-medium);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-xl);
   padding: var(--spacing-2xl);
   width: 90%;
   max-width: 450px;
   text-align: center;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
 .modal-header {
@@ -522,7 +429,6 @@ body::before {
   width: 100%;
   height: 12px;
   background: var(--bg-dark);
-  border-radius: 6px;
   overflow: hidden;
   margin-bottom: var(--spacing-lg);
 }
@@ -530,7 +436,6 @@ body::before {
 #loadbarmain, .progress-bar {
   height: 100%;
   background: linear-gradient(90deg, var(--primary-color), var(--success-color));
-  border-radius: 6px;
   transition: width var(--transition-normal);
   animation: shimmer 2s ease-in-out infinite;
 }
@@ -553,9 +458,6 @@ body::before {
   color: var(--text-muted);
 }
 
-/* =============================================================================
-   CHART SECTION
-   ============================================================================= */
 .chart-section {
   max-width: 1000px;
   margin: var(--spacing-xl) auto;
@@ -575,9 +477,6 @@ body::before {
   display: block;
 }
 
-/* =============================================================================
-   FOOTER
-   ============================================================================= */
 .footer {
   margin-top: var(--spacing-2xl);
   padding: var(--spacing-xl);
@@ -618,11 +517,6 @@ body::before {
   color: var(--text-primary);
 }
 
-/* =============================================================================
-   RESPONSIVE DESIGN
-   ============================================================================= */
-
-/* Tablet and below */
 @media only screen and (max-width: 834px) {
   .main-app {
     grid-template-columns: 1fr;
@@ -721,9 +615,6 @@ body::before {
   }
 }
 
-/* =============================================================================
-   UTILITY CLASSES
-   ============================================================================= */
 .text-center { text-align: center; }
 .text-left { text-align: left; }
 .text-right { text-align: right; }
@@ -738,9 +629,6 @@ body::before {
 .mb-3 { margin-bottom: var(--spacing-lg); }
 .mb-4 { margin-bottom: var(--spacing-xl); }
 
-/* =============================================================================
-   SCROLLBAR STYLING
-   ============================================================================= */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -752,16 +640,12 @@ body::before {
 
 ::-webkit-scrollbar-thumb {
   background: var(--bg-light);
-  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary-color);
 }
 
-/* =============================================================================
-   SELECTION STYLING
-   ============================================================================= */
 ::selection {
   background: var(--primary-color);
   color: white;
@@ -772,9 +656,6 @@ body::before {
   color: white;
 }
 
-/* =============================================================================
-   TOGGLE SWITCH STYLES
-   ============================================================================= */
 .toggle-container {
   display: flex;
   align-items: center;
@@ -803,7 +684,6 @@ body::before {
   bottom: 0;
   background-color: var(--bg-light);
   transition: var(--transition-normal);
-  border-radius: 26px;
   border: 1px solid var(--glass-border);
 }
 
@@ -816,7 +696,6 @@ body::before {
   bottom: 3px;
   background-color: var(--text-muted);
   transition: var(--transition-normal);
-  border-radius: 50%;
 }
 
 .toggle-switch input:checked + .toggle-slider {
@@ -829,10 +708,6 @@ body::before {
   background-color: white;
 }
 
-.toggle-switch input:focus + .toggle-slider {
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
-}
-
 .toggle-label {
   font-size: 0.9rem;
   color: var(--text-secondary);
@@ -843,9 +718,6 @@ body::before {
   color: var(--success-color);
 }
 
-/* =============================================================================
-   CHART CONTROLS STYLES
-   ============================================================================= */
 .chart-card .card-header {
   flex-wrap: wrap;
   gap: var(--spacing-md);
@@ -871,7 +743,6 @@ body::before {
   gap: 2px;
   background: rgba(0, 0, 0, 0.3);
   padding: 3px;
-  border-radius: var(--radius-md);
 }
 
 .btn-chip {
@@ -885,7 +756,6 @@ body::before {
   color: var(--text-muted);
   background: transparent;
   border: none;
-  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all var(--transition-fast);
   white-space: nowrap;
@@ -899,13 +769,11 @@ body::before {
 .btn-chip.active {
   color: var(--text-primary);
   background: #000000;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
 }
 
 .btn-chip-icon {
   padding: var(--spacing-xs) var(--spacing-sm);
   background: rgba(0, 0, 0, 0.3);
-  border-radius: var(--radius-md);
 }
 
 .btn-chip-icon.active {
